@@ -100,7 +100,7 @@ fun CaptureScreen(
 
     fun processImage(file: File, currentTarget: CaptureTarget) {
         scope.launch {
-            viewModel.setProcessing(true)
+            viewModel.updateProcessing(true)
             try {
                 val uri = Uri.fromFile(file)
                 when (currentTarget) {
@@ -114,7 +114,7 @@ fun CaptureScreen(
             } catch (e: Exception) {
                 viewModel.setError("読み取りに失敗しました。もう一度お試しください。")
             } finally {
-                viewModel.setProcessing(false)
+                viewModel.updateProcessing(false)
             }
         }
     }
