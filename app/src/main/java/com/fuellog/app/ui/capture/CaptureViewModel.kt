@@ -64,7 +64,7 @@ class CaptureViewModel : ViewModel() {
         errorMessage = null
     }
 
-    fun setProcessing(processing: Boolean) {
+    fun updateProcessing(processing: Boolean) {
         isProcessing = processing
     }
 
