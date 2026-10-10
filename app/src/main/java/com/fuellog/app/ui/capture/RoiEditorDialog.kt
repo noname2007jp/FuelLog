@@ -41,7 +41,7 @@ import java.io.File
 
 /**
  * Normalized image coordinate ROI editor. Drag inside the frame to move it;
- * drag the bottom-right handle to resize it.
+ * drag any corner handle to resize it.
  */
 @Composable
 fun RoiEditorDialog(
@@ -94,7 +94,7 @@ fun RoiEditorDialog(
         title = { Text("読み取り範囲（ROI）設定") },
         text = {
             Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("対象を選び、枠内をドラッグして移動、右下の丸をドラッグしてサイズを変更します。")
+                Text("対象を選び、枠内をドラッグして移動、四隅の丸をドラッグしてサイズを変更します。")
                 Row(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(scroll),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
