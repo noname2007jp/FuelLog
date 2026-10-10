@@ -116,7 +116,22 @@ fun CaptureScreen(
                 when (currentTarget) {
                     CaptureTarget.RECEIPT -> {
                         viewModel.applyExifDate(exifDate)
-                        viewModel.onReceiptRecognized(normalizedFile.absolutePath, ocrEngine.recognizeReceipt(uri))
+                        val amountRoi = roi(RoiTarget.FUEL_AMOUNT)
+                        val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
+                        val totalRoi = roi(RoiTarget.TOTAL)
+                        val dateRoi = roi(RoiTarget.DATE)
+                        val roiConfigured = amountRoi != null && unitPriceRoi != null &&
+                            totalRoi != null && dateRoi != null
+                        val text = if (roiConfigured) {
+                            val litersText = ocrEngine.recognizeRegion(normalizedFile, amountRoi!!, useJapanese = true)
+                            val unitText = ocrEngine.recognizeRegion(normalizedFile, unitPriceRoi!!, useJapanese = true)
+                            val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi!!, useJapanese = true)
+                            val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi!!, useJapanese = true)
+                            "給油量 $litersText\n単価 $unitText\n合計 $totalText\n日付 $dateText"
+                        } else {
+                            ocrEngine.recognizeReceipt(uri)
+                        }
+                        viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER -> {
                         val integerRoi = roi(RoiTarget.ODOMETER_INTEGER)
@@ -362,7 +377,7 @@ fun CaptureScreen(
                 onSaved = {
                     showRoiEditor = false
                     viewModel.setError(null)
-                    viewModel.infoMessage = "ROI設定を保存しました。次回の読み取りから適用します"
+                    viewModel.setInfo("ROI設定を保存しました。次回の読み取りから適用します")
                 }
             )
         }
