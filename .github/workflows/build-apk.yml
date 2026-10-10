@@ -37,6 +37,9 @@ jobs:
           test -f settings.gradle.kts
           test -f app/build.gradle.kts
 
+      - name: Run unit tests
+        run: gradle --no-daemon testDebugUnitTest --stacktrace --warning-mode all
+
       - name: Build Debug APK
         run: gradle --no-daemon assembleDebug --stacktrace --warning-mode all
 
