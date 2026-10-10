@@ -20,7 +20,8 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.DatePicker
 import androidx.compose.material3.DatePickerDialog
-import androidx.compose.material3.rememberDatePickerState\nimport androidx.compose.material3.Button
+import androidx.compose.material3.rememberDatePickerState
+import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -279,7 +280,8 @@ fun EditRecordScreen(
             DatePicker(state = datePickerState)
         }
     }
-\n    if (showDeleteDialog) {
+
+    if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("記録の削除") },
