@@ -47,10 +47,11 @@ class CaptureViewModel : ViewModel() {
         errorMessage = null
     }
 
-    /** Exif日時が有効な場合のみ、レシート日付が未検出のときに採用する。 */
+    /** 新しいレシート画像の処理開始時に日付ソースを初期化し、有効なExif日付を仮採用する。 */
     fun applyExifDate(date: LocalDate?) {
-        if (dateOrigin != DateOrigin.RECEIPT && date != null &&
-            date.year >= 1971 && !date.isAfter(LocalDate.now())) {
+        recognizedDate = LocalDate.now()
+        dateOrigin = DateOrigin.TODAY
+        if (date != null && date.year >= 1971 && !date.isAfter(LocalDate.now())) {
             recognizedDate = date
             dateOrigin = DateOrigin.EXIF
         }
