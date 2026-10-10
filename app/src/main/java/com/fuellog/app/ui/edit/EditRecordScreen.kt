@@ -65,7 +65,7 @@ fun EditRecordScreen(
     val viewModel: EditViewModel = viewModel(factory = EditViewModel.factory(app.repository, recordId))
     val existing = viewModel.existing
 
-    var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var date by rememberSaveable { mutableStateOf(captureViewModel.recognizedDate.toString()) }
     var fuelText by rememberSaveable { mutableStateOf("") }
     var costText by rememberSaveable { mutableStateOf("") }
     var priceText by rememberSaveable { mutableStateOf("") }
@@ -87,7 +87,7 @@ fun EditRecordScreen(
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
-            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable(it) }
+            date = captureViewModel.recognizedDate.toString()\n            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable(it) }
             captureViewModel.costYen?.let { costText = it.toString() }
             captureViewModel.unitPrice?.let { priceText = Formatters.editable(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
@@ -130,7 +130,7 @@ fun EditRecordScreen(
 
         LabeledField(
             label = "給油日",
-            badge = "読み取った日を自動入力",
+            badge = captureViewModel.dateOrigin.label,
             value = date,
             onValueChange = { date = it },
             keyboardType = KeyboardType.Text,
