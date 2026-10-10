@@ -37,7 +37,7 @@ class ReceiptDateParserTest {
 
     @Test
     fun combinesOdometerIntegerAndDecimalRois() {
-        assertEquals(48532.7, OcrAnalyzer.combineOdometer("48,532", "7"), 0.0001)
+        assertEquals(48532.7, OcrAnalyzer.combineOdometer("48,532", "7")!!, 0.0001)
         assertNull(OcrAnalyzer.combineOdometer("", "7"))
         assertNull(OcrAnalyzer.combineOdometer("48532", ""))
     }
