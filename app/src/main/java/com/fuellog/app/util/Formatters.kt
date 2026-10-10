@@ -10,8 +10,6 @@ object Formatters {
     fun fmt0plain(v: Double): String = String.format(Locale.US, "%.0f", v)
     fun money(v: Int): String = String.format(Locale.US, "%,d", v)
     /** 入力欄表示用。値自体は変更せず、表示だけ必要な精度に整える。 */
-    fun editable(v: Double): String =
-        if (v % 1.0 == 0.0) v.toLong().toString() else fmt1(v)
-    fun editable2(v: Double): String =
-        if (v % 1.0 == 0.0) v.toLong().toString() else fmt2(v)
+    fun editable(v: Double): String = fmt1(v)
+    fun editable2(v: Double): String = fmt2(v)
 }
