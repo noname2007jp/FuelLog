@@ -81,6 +81,7 @@ fun RoiEditorDialog(
     var selected by remember { mutableStateOf(RoiTarget.ODOMETER_INTEGER) }
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
+    var resizing by remember { mutableStateOf(false) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -92,7 +93,7 @@ fun RoiEditorDialog(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(scroll),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    RoiTarget.entries.filter { it != RoiTarget.WHOLE }.forEach { target ->
+                    RoiTarget.entries.forEach { target ->
                         FilterChip(
                             selected = selected == target,
                             onClick = {
@@ -117,15 +118,21 @@ fun RoiEditorDialog(
                                 .fillMaxWidth()
                                 .matchParentSize()
                                 .pointerInput(selected, active, bitmap.width, bitmap.height) {
-                                    detectDragGestures { change, dragAmount ->
+                                    detectDragGestures(
+                                        onDragStart = { position ->
+                                            val current = rois.firstOrNull { it.target == selected }
+                                            resizing = current != null &&
+                                                position.x >= current.right * size.width - 36.dp.toPx() &&
+                                                position.y >= current.bottom * size.height - 36.dp.toPx()
+                                        },
+                                        onDragEnd = { resizing = false },
+                                        onDragCancel = { resizing = false }
+                                    ) { change, dragAmount ->
                                         change.consume()
                                         val current = rois.firstOrNull { it.target == selected } ?: return@detectDragGestures
                                         val dx = dragAmount.x / size.width
                                         val dy = dragAmount.y / size.height
-                                        val pos = change.position
-                                        val nearHandle = pos.x >= current.right * size.width - 36.dp.toPx() &&
-                                            pos.y >= current.bottom * size.height - 36.dp.toPx()
-                                        val updated = if (nearHandle) current.resize(dx, dy) else current.move(dx, dy)
+                                        val updated = if (resizing) current.resize(dx, dy) else current.move(dx, dy)
                                         val index = rois.indexOfFirst { it.target == selected }
                                         if (index >= 0) rois[index] = updated
                                     }
