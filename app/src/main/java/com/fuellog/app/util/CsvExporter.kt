@@ -12,12 +12,12 @@ object CsvExporter {
             sb.appendLine(
                 listOf(
                     r.date,
-                    r.odometerKm?.let { Formatters.fmt0plain(it) } ?: "",
-                    entry.distanceKm?.let { Formatters.fmt0plain(it) } ?: "",
-                    Formatters.fmt1(r.fuelLiters),
+                    r.odometerKm?.let { Formatters.fmt1(it) } ?: "",
+                    entry.distanceKm?.let { Formatters.fmt1(it) } ?: "",
+                    Formatters.fmt2(r.fuelLiters),
                     entry.economyKmPerLiter?.let { Formatters.fmt1(it) } ?: "",
                     r.costYen.toString(),
-                    r.unitPrice?.let { Formatters.fmt1(it) } ?: ""
+                    r.unitPrice?.let { Formatters.fmt2(it) } ?: ""
                 ).joinToString(",")
             )
         }

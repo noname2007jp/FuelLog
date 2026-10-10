@@ -18,6 +18,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +55,10 @@ import com.fuellog.app.ui.capture.CaptureViewModel
 import com.fuellog.app.util.Formatters
 import java.io.File
 import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneOffset
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditRecordScreen(
     recordId: Long,
@@ -65,7 +72,7 @@ fun EditRecordScreen(
     val viewModel: EditViewModel = viewModel(factory = EditViewModel.factory(app.repository, recordId))
     val existing = viewModel.existing
 
-    var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var date by rememberSaveable { mutableStateOf(captureViewModel.recognizedDate.toString()) }
     var fuelText by rememberSaveable { mutableStateOf("") }
     var costText by rememberSaveable { mutableStateOf("") }
     var priceText by rememberSaveable { mutableStateOf("") }
@@ -74,22 +81,25 @@ fun EditRecordScreen(
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var prefilled by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     LaunchedEffect(existing) {
         if (prefilled) return@LaunchedEffect
         if (recordId > 0) {
             val r = existing ?: return@LaunchedEffect
             date = r.date
-            fuelText = Formatters.editable(r.fuelLiters)
+            fuelText = Formatters.editable2(r.fuelLiters)
             costText = if (r.costYen > 0) r.costYen.toString() else ""
-            priceText = r.unitPrice?.let { Formatters.editable(it) } ?: ""
+            priceText = r.unitPrice?.let { Formatters.editable2(it) } ?: ""
             odoText = r.odometerKm?.let { Formatters.editable(it) } ?: ""
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
-            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable(it) }
+            date = captureViewModel.recognizedDate.toString()
+            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable2(it) }
             captureViewModel.costYen?.let { costText = it.toString() }
-            captureViewModel.unitPrice?.let { priceText = Formatters.editable(it) }
+            captureViewModel.unitPrice?.let { priceText = Formatters.editable2(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
             captureViewModel.tripKm?.let { tripText = Formatters.editable(it) }
             prefilled = true
@@ -130,12 +140,22 @@ fun EditRecordScreen(
 
         LabeledField(
             label = "給油日",
-            badge = "読み取った日を自動入力",
+            badge = captureViewModel.dateOrigin.label,
             value = date,
             onValueChange = { date = it },
             keyboardType = KeyboardType.Text,
             placeholder = "2026-10-06"
         )
+
+        OutlinedButton(
+            onClick = {
+                date.toLocalDateOrNullForPicker()?.let {
+                    datePickerState.selectedDateMillis = it.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                }
+                showDatePicker = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("カレンダーから日付を選択") }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledField(
@@ -206,11 +226,19 @@ fun EditRecordScreen(
                         val record = FuelRecord(
                             id = existing?.id ?: 0,
                             date = date,
-                            fuelLiters = liters,
+                            fuelLiters = existing?.takeIf {
+                                fuelText == Formatters.editable2(it.fuelLiters)
+                            }?.fuelLiters ?: liters,
                             costYen = costText.replace(",", "").toIntOrNull() ?: 0,
-                            unitPrice = priceText.replace(",", "").toDoubleOrNull(),
-                            odometerKm = odoText.replace(",", "").toDoubleOrNull(),
-                            tripKm = tripText.replace(",", "").toDoubleOrNull(),
+                            unitPrice = existing?.takeIf { it.unitPrice != null &&
+                                priceText == Formatters.editable2(it.unitPrice) }?.unitPrice
+                                ?: priceText.replace(",", "").toDoubleOrNull(),
+                            odometerKm = existing?.takeIf { it.odometerKm != null &&
+                                odoText == Formatters.editable(it.odometerKm) }?.odometerKm
+                                ?: odoText.replace(",", "").toDoubleOrNull(),
+                            tripKm = existing?.takeIf { it.tripKm != null &&
+                                tripText == Formatters.editable(it.tripKm) }?.tripKm
+                                ?: tripText.replace(",", "").toDoubleOrNull(),
                             receiptPhotoPath = receiptPath,
                             meterPhotoPath = meterPath,
                             createdAt = existing?.createdAt ?: System.currentTimeMillis()
@@ -233,6 +261,26 @@ fun EditRecordScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+                    }
+                    showDatePicker = false
+                }) { Text("決定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     if (showDeleteDialog) {
@@ -329,3 +377,7 @@ private fun PhotoThumbnail(
         )
     }
 }
+
+
+private fun String.toLocalDateOrNullForPicker(): LocalDate? =
+    try { LocalDate.parse(this) } catch (_: Exception) { null }
