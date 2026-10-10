@@ -424,7 +424,7 @@ private fun buildStatusText(viewModel: CaptureViewModel): String = buildString {
     )
     viewModel.costYen?.let { append(" / ¥${Formatters.money(it)}") }
     append("    オド: ")
-    append(viewModel.odometerKm?.let { "${Formatters.fmt0(it)}km" } ?: "—")
+    append(viewModel.odometerKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
     append("    トリップ: ")
     append(viewModel.tripKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
 }
