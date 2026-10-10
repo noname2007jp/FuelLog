@@ -349,7 +349,7 @@ fun CaptureScreen(
 private fun buildStatusText(viewModel: CaptureViewModel): String = buildString {
     append("レシート: ")
     append(
-        viewModel.fuelLiters?.let { "${Formatters.fmt1(it)}L" }
+        viewModel.fuelLiters?.let { "${Formatters.fmt2(it)}L" }
             ?: if (viewModel.receiptPhotoPath != null) "撮影済" else "未撮影"
     )
     viewModel.costYen?.let { append(" / ¥${Formatters.money(it)}") }
