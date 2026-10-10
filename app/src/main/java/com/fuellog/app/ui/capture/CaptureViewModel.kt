@@ -79,6 +79,8 @@ class CaptureViewModel : ViewModel() {
         dateOrigin = DateOrigin.MANUAL
     }
 
+    fun setInfo(message: String?) { infoMessage = message }
+
     fun updateProcessing(processing: Boolean) { isProcessing = processing }
 
     fun setError(message: String?) {
