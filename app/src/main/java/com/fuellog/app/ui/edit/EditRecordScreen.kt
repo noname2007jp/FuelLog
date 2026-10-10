@@ -142,7 +142,10 @@ fun EditRecordScreen(
             label = "給油日",
             badge = captureViewModel.dateOrigin.label,
             value = date,
-            onValueChange = { date = it },
+            onValueChange = {
+                date = it
+                it.toLocalDateOrNullForPicker()?.let(captureViewModel::setDate)
+            },
             keyboardType = KeyboardType.Text,
             placeholder = "2026-10-06"
         )
@@ -271,6 +274,7 @@ fun EditRecordScreen(
                 TextButton(onClick = {
                     datePickerState.selectedDateMillis?.let { millis ->
                         date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+                        captureViewModel.setDate(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
                     }
                     showDatePicker = false
                 }) { Text("決定") }
