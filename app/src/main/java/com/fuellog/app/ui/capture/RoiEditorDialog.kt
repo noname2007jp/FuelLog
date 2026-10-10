@@ -123,7 +123,7 @@ fun RoiEditorDialog(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .matchParentSize()
-                                .pointerInput(selected, active, bitmap.width, bitmap.height) {
+                                .pointerInput(selected, bitmap.width, bitmap.height) {
                                     detectDragGestures(
                                         onDragStart = { position ->
                                             val current = rois.firstOrNull { it.target == selected }
