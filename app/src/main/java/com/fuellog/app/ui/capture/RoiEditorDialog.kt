@@ -19,6 +19,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
@@ -57,6 +58,10 @@ fun RoiEditorDialog(
             confirmButton = { Button(onClick = onDismiss) { Text("閉じる") } }
         )
         return
+    }
+
+    DisposableEffect(bitmap) {
+        onDispose { if (!bitmap.isRecycled) bitmap.recycle() }
     }
 
     val rois = remember(imageFile.absolutePath) {
@@ -166,13 +171,11 @@ fun RoiEditorDialog(
         confirmButton = {
             Button(onClick = {
                 roiStore.save(rois.toList())
-                bitmap.recycle()
                 onSaved()
             }) { Text("保存") }
         },
         dismissButton = {
             OutlinedButton(onClick = {
-                bitmap.recycle()
                 onDismiss()
             }) { Text("キャンセル") }
         }
