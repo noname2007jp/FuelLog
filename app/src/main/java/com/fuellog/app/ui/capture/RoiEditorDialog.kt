@@ -34,6 +34,7 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.dp
 import com.fuellog.app.ocr.NormalizedRoi
+import com.fuellog.app.ocr.RoiCorner
 import com.fuellog.app.ocr.RoiStore
 import com.fuellog.app.ocr.RoiTarget
 import java.io.File
@@ -86,7 +87,7 @@ fun RoiEditorDialog(
     var selected by remember { mutableStateOf(RoiTarget.ODOMETER_INTEGER) }
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
-    var resizing by remember { mutableStateOf(false) }
+    var resizeCorner by remember { mutableStateOf<RoiCorner?>(null) }
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -126,18 +127,28 @@ fun RoiEditorDialog(
                                     detectDragGestures(
                                         onDragStart = { position ->
                                             val current = rois.firstOrNull { it.target == selected }
-                                            resizing = current != null &&
-                                                position.x >= current.right * size.width - 36.dp.toPx() &&
-                                                position.y >= current.bottom * size.height - 36.dp.toPx()
+                                            val radius = 36.dp.toPx()
+                                            resizeCorner = current?.let { roi ->
+                                                listOf(
+                                                    RoiCorner.TOP_LEFT to Offset(roi.left * size.width, roi.top * size.height),
+                                                    RoiCorner.TOP_RIGHT to Offset(roi.right * size.width, roi.top * size.height),
+                                                    RoiCorner.BOTTOM_LEFT to Offset(roi.left * size.width, roi.bottom * size.height),
+                                                    RoiCorner.BOTTOM_RIGHT to Offset(roi.right * size.width, roi.bottom * size.height)
+                                                ).firstOrNull { (_, point) ->
+                                                    kotlin.math.abs(position.x - point.x) <= radius &&
+                                                        kotlin.math.abs(position.y - point.y) <= radius
+                                                }?.first
+                                            }
                                         },
-                                        onDragEnd = { resizing = false },
-                                        onDragCancel = { resizing = false }
+                                        onDragEnd = { resizeCorner = null },
+                                        onDragCancel = { resizeCorner = null }
                                     ) { change, dragAmount ->
                                         change.consume()
                                         val current = rois.firstOrNull { it.target == selected } ?: return@detectDragGestures
                                         val dx = dragAmount.x / size.width
                                         val dy = dragAmount.y / size.height
-                                        val updated = if (resizing) current.resize(dx, dy) else current.move(dx, dy)
+                                        val updated = resizeCorner?.let { current.resizeFrom(it, dx, dy) }
+                                            ?: current.move(dx, dy)
                                         val index = rois.indexOfFirst { it.target == selected }
                                         if (index >= 0) rois[index] = updated
                                     }
@@ -156,11 +167,14 @@ fun RoiEditorDialog(
                                     style = Stroke(width = if (isActive) 3.dp.toPx() else 1.dp.toPx())
                                 )
                                 if (isActive) {
-                                    drawCircle(
-                                        color = color,
-                                        radius = 9.dp.toPx(),
-                                        center = Offset(roi.right * size.width, roi.bottom * size.height)
-                                    )
+                                    listOf(
+                                        Offset(roi.left * size.width, roi.top * size.height),
+                                        Offset(roi.right * size.width, roi.top * size.height),
+                                        Offset(roi.left * size.width, roi.bottom * size.height),
+                                        Offset(roi.right * size.width, roi.bottom * size.height)
+                                    ).forEach { point ->
+                                        drawCircle(color = color, radius = 8.dp.toPx(), center = point)
+                                    }
                                 }
                             }
                         }
