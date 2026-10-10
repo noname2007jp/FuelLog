@@ -1,10 +1,6 @@
 package com.fuellog.app.util
 
 import java.time.LocalDate
-import java.time.chrono.JapaneseDate
-import java.time.chrono.JapaneseEra
-import java.time.format.DateTimeFormatter
-import java.time.format.ResolverStyle
 import java.util.Locale
 
 enum class DateOrigin(val label: String) {
@@ -46,7 +42,9 @@ object ReceiptDateParser {
                 "昭和", "S" -> 1925
                 else -> return@forEach
             }
-            makeDate(base + eraYear, m.groupValues[3].toInt(), m.groupValues[4].toInt())?.let(candidates::add)
+            makeDate(base + eraYear, m.groupValues[3].toInt(), m.groupValues[4].toInt())
+                ?.takeIf { isWithinEra(era, it) }
+                ?.let(candidates::add)
         }
         return candidates.firstOrNull { it.year >= 1971 && !it.isAfter(today) }
     }
@@ -59,4 +57,13 @@ object ReceiptDateParser {
 
     private fun makeDate(year: Int, month: Int, day: Int): LocalDate? =
         try { LocalDate.of(year, month, day) } catch (_: Exception) { null }
+
+    private fun isWithinEra(era: String, date: LocalDate): Boolean = when (era) {
+        "令和", "R" -> !date.isBefore(LocalDate.of(2019, 5, 1))
+        "平成", "H" -> !date.isBefore(LocalDate.of(1989, 1, 8)) &&
+            !date.isAfter(LocalDate.of(2019, 4, 30))
+        "昭和", "S" -> !date.isBefore(LocalDate.of(1926, 12, 25)) &&
+            !date.isAfter(LocalDate.of(1989, 1, 7))
+        else -> false
+    }
 }
