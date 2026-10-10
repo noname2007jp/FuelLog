@@ -102,14 +102,18 @@ fun CaptureScreen(
         scope.launch {
             viewModel.updateProcessing(true)
             try {
-                val uri = Uri.fromFile(file)
+                val exifDate = ImageUtils.readExifDate(file)
+                val normalizedFile = ImageUtils.normalizeForDisplayAndOcr(file, app.photoDir) ?: file
+                val uri = Uri.fromFile(normalizedFile)
                 when (currentTarget) {
-                    CaptureTarget.RECEIPT ->
-                        viewModel.onReceiptRecognized(file.absolutePath, ocrEngine.recognizeReceipt(uri))
+                    CaptureTarget.RECEIPT -> {
+                        viewModel.applyExifDate(exifDate)
+                        viewModel.onReceiptRecognized(normalizedFile.absolutePath, ocrEngine.recognizeReceipt(uri))
+                    }
                     CaptureTarget.ODOMETER ->
-                        viewModel.onOdometerRecognized(file.absolutePath, ocrEngine.recognizeMeter(uri))
+                        viewModel.onOdometerRecognized(normalizedFile.absolutePath, ocrEngine.recognizeMeter(uri))
                     CaptureTarget.TRIP ->
-                        viewModel.onTripRecognized(file.absolutePath, ocrEngine.recognizeMeter(uri))
+                        viewModel.onTripRecognized(normalizedFile.absolutePath, ocrEngine.recognizeMeter(uri))
                 }
             } catch (e: Exception) {
                 viewModel.setError("読み取りに失敗しました。もう一度お試しください。")
