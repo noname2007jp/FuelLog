@@ -8,6 +8,8 @@ import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.text.TextRecognition
 import com.google.mlkit.vision.text.japanese.JapaneseTextRecognizerOptions
 import com.google.mlkit.vision.text.latin.TextRecognizerOptions
+import kotlinx.coroutines.CancellableContinuation
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
@@ -86,7 +88,7 @@ class OcrEngine(private val context: Context) {
     private fun process(
         image: InputImage,
         useJapanese: Boolean,
-        cont: kotlin.coroutines.Continuation<String>
+        cont: CancellableContinuation<String>
     ) {
         val client = if (useJapanese) japaneseRecognizer else latinRecognizer
         client.process(image)
