@@ -229,17 +229,25 @@ fun EditRecordScreen(
                         val record = FuelRecord(
                             id = existing?.id ?: 0,
                             date = date,
-                            fuelLiters = existing?.takeIf {
+                            fuelLiters = captureViewModel.fuelLiters?.takeIf {
+                                recordId <= 0 && fuelText == Formatters.editable2(it)
+                            } ?: existing?.takeIf {
                                 fuelText == Formatters.editable2(it.fuelLiters)
                             }?.fuelLiters ?: liters,
                             costYen = costText.replace(",", "").toIntOrNull() ?: 0,
-                            unitPrice = existing?.takeIf { it.unitPrice != null &&
+                            unitPrice = captureViewModel.unitPrice?.takeIf {
+                                recordId <= 0 && priceText == Formatters.editable2(it)
+                            } ?: existing?.takeIf { it.unitPrice != null &&
                                 priceText == Formatters.editable2(it.unitPrice) }?.unitPrice
                                 ?: priceText.replace(",", "").toDoubleOrNull(),
-                            odometerKm = existing?.takeIf { it.odometerKm != null &&
+                            odometerKm = captureViewModel.odometerKm?.takeIf {
+                                recordId <= 0 && odoText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.odometerKm != null &&
                                 odoText == Formatters.editable(it.odometerKm) }?.odometerKm
                                 ?: odoText.replace(",", "").toDoubleOrNull(),
-                            tripKm = existing?.takeIf { it.tripKm != null &&
+                            tripKm = captureViewModel.tripKm?.takeIf {
+                                recordId <= 0 && tripText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.tripKm != null &&
                                 tripText == Formatters.editable(it.tripKm) }?.tripKm
                                 ?: tripText.replace(",", "").toDoubleOrNull(),
                             receiptPhotoPath = receiptPath,
