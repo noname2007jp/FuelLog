@@ -18,7 +18,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker\nimport androidx.compose.material3.DatePickerDialog\nimport androidx.compose.material3.rememberDatePickerState\nimport androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +50,7 @@ import com.fuellog.app.data.FuelRecord
 import com.fuellog.app.ui.capture.CaptureViewModel
 import com.fuellog.app.util.Formatters
 import java.io.File
-import java.time.LocalDate
+import java.time.LocalDate\nimport java.time.Instant\nimport java.time.ZoneOffset
 
 @Composable
 fun EditRecordScreen(
@@ -73,7 +73,7 @@ fun EditRecordScreen(
     var tripText by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var prefilled by rememberSaveable { mutableStateOf(false) }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }\n    var showDatePicker by rememberSaveable { mutableStateOf(false) }\n    val datePickerState = rememberDatePickerState()
 
     LaunchedEffect(existing) {
         if (prefilled) return@LaunchedEffect
@@ -136,6 +136,16 @@ fun EditRecordScreen(
             keyboardType = KeyboardType.Text,
             placeholder = "2026-10-06"
         )
+
+        OutlinedButton(
+            onClick = {
+                date.toLocalDateOrNullForPicker()?.let {
+                    datePickerState.selectedDateMillis = it.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                }
+                showDatePicker = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("カレンダーから日付を選択") }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledField(
@@ -235,7 +245,26 @@ fun EditRecordScreen(
         Spacer(modifier = Modifier.height(24.dp))
     }
 
-    if (showDeleteDialog) {
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+                    }
+                    showDatePicker = false
+                }) { Text("決定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
+    }
+\n    if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
             title = { Text("記録の削除") },
@@ -329,3 +358,7 @@ private fun PhotoThumbnail(
         )
     }
 }
+
+
+private fun String.toLocalDateOrNullForPicker(): LocalDate? =
+    try { LocalDate.parse(this) } catch (_: Exception) { null }
