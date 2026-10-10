@@ -18,7 +18,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.DatePicker\nimport androidx.compose.material3.DatePickerDialog\nimport androidx.compose.material3.rememberDatePickerState\nimport androidx.compose.material3.Button
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState\nimport androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -50,7 +52,9 @@ import com.fuellog.app.data.FuelRecord
 import com.fuellog.app.ui.capture.CaptureViewModel
 import com.fuellog.app.util.Formatters
 import java.io.File
-import java.time.LocalDate\nimport java.time.Instant\nimport java.time.ZoneOffset
+import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneOffset
 
 @Composable
 fun EditRecordScreen(
@@ -73,7 +77,9 @@ fun EditRecordScreen(
     var tripText by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var prefilled by rememberSaveable { mutableStateOf(false) }
-    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }\n    var showDatePicker by rememberSaveable { mutableStateOf(false) }\n    val datePickerState = rememberDatePickerState()
+    var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     LaunchedEffect(existing) {
         if (prefilled) return@LaunchedEffect
@@ -87,7 +93,8 @@ fun EditRecordScreen(
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
-            date = captureViewModel.recognizedDate.toString()\n            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable2(it) }
+            date = captureViewModel.recognizedDate.toString()
+            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable2(it) }
             captureViewModel.costYen?.let { costText = it.toString() }
             captureViewModel.unitPrice?.let { priceText = Formatters.editable2(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
