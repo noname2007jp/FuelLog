@@ -80,16 +80,16 @@ fun EditRecordScreen(
         if (recordId > 0) {
             val r = existing ?: return@LaunchedEffect
             date = r.date
-            fuelText = Formatters.editable(r.fuelLiters)
+            fuelText = Formatters.editable2(r.fuelLiters)
             costText = if (r.costYen > 0) r.costYen.toString() else ""
-            priceText = r.unitPrice?.let { Formatters.editable(it) } ?: ""
+            priceText = r.unitPrice?.let { Formatters.editable2(it) } ?: ""
             odoText = r.odometerKm?.let { Formatters.editable(it) } ?: ""
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
-            date = captureViewModel.recognizedDate.toString()\n            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable(it) }
+            date = captureViewModel.recognizedDate.toString()\n            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable2(it) }
             captureViewModel.costYen?.let { costText = it.toString() }
-            captureViewModel.unitPrice?.let { priceText = Formatters.editable(it) }
+            captureViewModel.unitPrice?.let { priceText = Formatters.editable2(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
             captureViewModel.tripKm?.let { tripText = Formatters.editable(it) }
             prefilled = true
@@ -216,11 +216,19 @@ fun EditRecordScreen(
                         val record = FuelRecord(
                             id = existing?.id ?: 0,
                             date = date,
-                            fuelLiters = liters,
+                            fuelLiters = existing?.takeIf {
+                                fuelText == Formatters.editable2(it.fuelLiters)
+                            }?.fuelLiters ?: liters,
                             costYen = costText.replace(",", "").toIntOrNull() ?: 0,
-                            unitPrice = priceText.replace(",", "").toDoubleOrNull(),
-                            odometerKm = odoText.replace(",", "").toDoubleOrNull(),
-                            tripKm = tripText.replace(",", "").toDoubleOrNull(),
+                            unitPrice = existing?.takeIf { it.unitPrice != null &&
+                                priceText == Formatters.editable2(it.unitPrice) }?.unitPrice
+                                ?: priceText.replace(",", "").toDoubleOrNull(),
+                            odometerKm = existing?.takeIf { it.odometerKm != null &&
+                                odoText == Formatters.editable(it.odometerKm) }?.odometerKm
+                                ?: odoText.replace(",", "").toDoubleOrNull(),
+                            tripKm = existing?.takeIf { it.tripKm != null &&
+                                tripText == Formatters.editable(it.tripKm) }?.tripKm
+                                ?: tripText.replace(",", "").toDoubleOrNull(),
                             receiptPhotoPath = receiptPath,
                             meterPhotoPath = meterPath,
                             createdAt = existing?.createdAt ?: System.currentTimeMillis()
