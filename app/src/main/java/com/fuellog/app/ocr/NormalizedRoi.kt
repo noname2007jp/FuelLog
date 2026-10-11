@@ -4,11 +4,13 @@ package com.fuellog.app.ocr
 enum class RoiCorner { TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT }
 
 /** 画像比率(0..1)で保持するROI。画面サイズに依存しない。 */
-enum class RoiTarget(val label: String) {
-    ODOMETER_INTEGER("オド整数部"),
-    ODOMETER_DECIMAL("オド小数部"),
-    TRIP_INTEGER("トリップ整数部"),
-    TRIP_DECIMAL("トリップ小数部"),
+enum class RoiTarget(val label: String, val editable: Boolean = true) {
+    // Kept for reading legacy saved settings, but no longer shown: the dashboard is scanned as one area.
+    ODOMETER_INTEGER("オド整数部", editable = false),
+    ODOMETER_DECIMAL("オド小数部", editable = false),
+    TRIP_INTEGER("トリップ整数部", editable = false),
+    TRIP_DECIMAL("トリップ小数部", editable = false),
+    DASHBOARD("メーター全体"),
     FUEL_AMOUNT("給油量"),
     UNIT_PRICE("単価"),
     TOTAL("合計"),
