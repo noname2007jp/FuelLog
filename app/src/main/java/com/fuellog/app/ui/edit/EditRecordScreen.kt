@@ -77,7 +77,9 @@ fun EditRecordScreen(
     var costText by rememberSaveable { mutableStateOf("") }
     var priceText by rememberSaveable { mutableStateOf("") }
     var odoText by rememberSaveable { mutableStateOf("") }
+    var tripAText by rememberSaveable { mutableStateOf("") }
     var tripText by rememberSaveable { mutableStateOf("") }
+    var vehicleEconomyText by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var prefilled by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
@@ -93,7 +95,9 @@ fun EditRecordScreen(
             costText = if (r.costYen > 0) r.costYen.toString() else ""
             priceText = r.unitPrice?.let { Formatters.editable2(it) } ?: ""
             odoText = r.odometerKm?.let { Formatters.editable(it) } ?: ""
+            tripAText = r.tripAKm?.let { Formatters.editable(it) } ?: ""
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
+            vehicleEconomyText = r.vehicleFuelEconomyKmPerLiter?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
             date = captureViewModel.recognizedDate.toString()
@@ -101,7 +105,9 @@ fun EditRecordScreen(
             captureViewModel.costYen?.let { costText = it.toString() }
             captureViewModel.unitPrice?.let { priceText = Formatters.editable2(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
+            captureViewModel.tripAKm?.let { tripAText = Formatters.editable(it) }
             captureViewModel.tripKm?.let { tripText = Formatters.editable(it) }
+            captureViewModel.vehicleFuelEconomyKmPerLiter?.let { vehicleEconomyText = Formatters.editable(it) }
             prefilled = true
         }
     }
@@ -200,16 +206,34 @@ fun EditRecordScreen(
         )
 
         LabeledField(
-            label = "トリップメーター: 区間距離 (km)",
-            badge = "OCR読取",
+            label = "トリップA: オドメーター補完用 (km)",
+            badge = "メーター自動判定",
+            value = tripAText,
+            onValueChange = { tripAText = it },
+            keyboardType = KeyboardType.Decimal,
+            placeholder = "123456.7"
+        )
+
+        LabeledField(
+            label = "トリップB: 前回満タンからの走行距離 (km)",
+            badge = "燃費計算に使用",
             value = tripText,
             onValueChange = { tripText = it },
             keyboardType = KeyboardType.Decimal,
             placeholder = "512.3"
         )
 
+        LabeledField(
+            label = "車載燃費 (km/L)",
+            badge = "メーター表示値",
+            value = vehicleEconomyText,
+            onValueChange = { vehicleEconomyText = it },
+            keyboardType = KeyboardType.Decimal,
+            placeholder = "15.6"
+        )
+
         Text(
-            "※ すべての項目は修正できます\n※ トリップ未入力時はオドメーター差分から走行距離を自動計算します",
+            "※ すべての項目は修正できます\n※ 燃費計算にはトリップBを優先し、未入力時はオドメーター差分を使用します\n※ トリップAはオドメーターの小数部補完に利用します",
             fontSize = 10.sp,
             color = Color(0xFF7A828F)
         )
@@ -245,11 +269,21 @@ fun EditRecordScreen(
                             } ?: existing?.takeIf { it.odometerKm != null &&
                                 odoText == Formatters.editable(it.odometerKm) }?.odometerKm
                                 ?: odoText.replace(",", "").toDoubleOrNull(),
+                            tripAKm = captureViewModel.tripAKm?.takeIf {
+                                recordId <= 0 && tripAText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.tripAKm != null &&
+                                tripAText == Formatters.editable(it.tripAKm) }?.tripAKm
+                                ?: tripAText.replace(",", "").toDoubleOrNull(),
                             tripKm = captureViewModel.tripKm?.takeIf {
                                 recordId <= 0 && tripText == Formatters.editable(it)
                             } ?: existing?.takeIf { it.tripKm != null &&
                                 tripText == Formatters.editable(it.tripKm) }?.tripKm
                                 ?: tripText.replace(",", "").toDoubleOrNull(),
+                            vehicleFuelEconomyKmPerLiter = captureViewModel.vehicleFuelEconomyKmPerLiter?.takeIf {
+                                recordId <= 0 && vehicleEconomyText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.vehicleFuelEconomyKmPerLiter != null &&
+                                vehicleEconomyText == Formatters.editable(it.vehicleFuelEconomyKmPerLiter) }?.vehicleFuelEconomyKmPerLiter
+                                ?: vehicleEconomyText.replace(",", "").toDoubleOrNull(),
                             receiptPhotoPath = receiptPath,
                             meterPhotoPath = meterPath,
                             createdAt = existing?.createdAt ?: System.currentTimeMillis()
