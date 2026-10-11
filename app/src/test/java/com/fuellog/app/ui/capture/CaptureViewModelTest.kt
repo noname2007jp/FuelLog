@@ -6,6 +6,24 @@ import org.junit.Test
 
 class CaptureViewModelTest {
 
+
+    @Test
+    fun failedMeterOcrDoesNotKeepPreviousReading() {
+        val viewModel = CaptureViewModel()
+
+        viewModel.onOdometerRecognized("/tmp/meter1.jpg", "48532.7")
+        assertEquals(48532.7, viewModel.odometerKm!!, 0.0001)
+
+        viewModel.onOdometerRecognized("/tmp/meter2.jpg", "数字を認識できません")
+        assertNull(viewModel.odometerKm)
+
+        viewModel.onTripRecognized("/tmp/trip1.jpg", "123.4")
+        assertEquals(123.4, viewModel.tripKm!!, 0.0001)
+
+        viewModel.onTripRecognized("/tmp/trip2.jpg", "数字を認識できません")
+        assertNull(viewModel.tripKm)
+    }
+
     @Test
     fun newReceiptDoesNotKeepValuesFromPreviousImageWhenOcrFails() {
         val viewModel = CaptureViewModel()
