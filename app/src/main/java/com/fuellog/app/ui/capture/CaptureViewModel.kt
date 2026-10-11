@@ -64,7 +64,7 @@ class CaptureViewModel : ViewModel() {
     fun onOdometerRecognized(path: String, text: String) {
         meterPhotoPath = path
         val value = OcrAnalyzer.parseOdometer(text)
-        odometerKm = value ?: odometerKm
+        odometerKm = value
         infoMessage = if (value != null) "オドメーターを読み取りました"
             else "数値を読み取れませんでした。確認画面で手入力してください"
         errorMessage = null
@@ -73,7 +73,7 @@ class CaptureViewModel : ViewModel() {
     fun onTripRecognized(path: String, text: String) {
         meterPhotoPath = path
         val value = OcrAnalyzer.parseTrip(text)
-        tripKm = value ?: tripKm
+        tripKm = value
         infoMessage = if (value != null) "トリップメーターを読み取りました"
             else "数値を読み取れませんでした。確認画面で手入力してください"
         errorMessage = null
