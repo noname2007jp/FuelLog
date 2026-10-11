@@ -78,7 +78,7 @@ fun RoiEditorDialog(
             if (isEmpty()) addAll(defaultRois())
         }
     }
-    var selected by remember { mutableStateOf(RoiTarget.DASHBOARD) }
+    var selected by remember { mutableStateOf(RoiTarget.METER_A_FRAME) }
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
     var resizeCorner by remember { mutableStateOf<RoiCorner?>(null) }
@@ -191,7 +191,20 @@ fun RoiEditorDialog(
                                     }
                                 }
                                 ) {
-                                    rois.forEach { roi ->
+                                    val visibleRois = when (selected) {
+                                        RoiTarget.METER_A_FRAME -> rois.filter { it.target == RoiTarget.METER_A_FRAME }
+                                        RoiTarget.METER_B_FRAME -> rois.filter { it.target == RoiTarget.METER_B_FRAME }
+                                        else -> rois.filter {
+                                            it.target in setOf(
+                                                RoiTarget.RECEIPT_FRAME,
+                                                RoiTarget.FUEL_AMOUNT,
+                                                RoiTarget.UNIT_PRICE,
+                                                RoiTarget.TOTAL,
+                                                RoiTarget.DATE
+                                            )
+                                        }
+                                    }
+                                    visibleRois.forEach { roi ->
                                         val isActive = roi.target == selected
                                         val color = if (isActive) Color(0xFFFFC107) else Color(0xFF4FC3F7)
                                         drawRect(
@@ -236,7 +249,9 @@ fun RoiEditorDialog(
 }
 
 private fun defaultRois() = listOf(
-    NormalizedRoi(RoiTarget.DASHBOARD, .05f, .25f, .95f, .75f),
+    NormalizedRoi(RoiTarget.RECEIPT_FRAME, .05f, .03f, .95f, .97f),
+    NormalizedRoi(RoiTarget.METER_A_FRAME, .05f, .25f, .95f, .75f),
+    NormalizedRoi(RoiTarget.METER_B_FRAME, .05f, .25f, .95f, .75f),
     NormalizedRoi(RoiTarget.FUEL_AMOUNT, .40f, .30f, .90f, .42f),
     NormalizedRoi(RoiTarget.UNIT_PRICE, .40f, .42f, .90f, .54f),
     NormalizedRoi(RoiTarget.TOTAL, .40f, .54f, .90f, .66f),
@@ -249,6 +264,9 @@ private fun defaultRoi(target: RoiTarget) = when (target) {
     RoiTarget.TRIP_INTEGER -> NormalizedRoi(target, .15f, .48f, .75f, .65f)
     RoiTarget.TRIP_DECIMAL -> NormalizedRoi(target, .70f, .48f, .88f, .65f)
     RoiTarget.DASHBOARD -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
+    RoiTarget.RECEIPT_FRAME -> NormalizedRoi(target, .05f, .03f, .95f, .97f)
+    RoiTarget.METER_A_FRAME -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
+    RoiTarget.METER_B_FRAME -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
     RoiTarget.FUEL_AMOUNT -> NormalizedRoi(target, .40f, .30f, .90f, .42f)
     RoiTarget.UNIT_PRICE -> NormalizedRoi(target, .40f, .42f, .90f, .54f)
     RoiTarget.TOTAL -> NormalizedRoi(target, .40f, .54f, .90f, .66f)
