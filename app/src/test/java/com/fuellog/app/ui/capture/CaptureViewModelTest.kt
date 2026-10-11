@@ -7,6 +7,21 @@ import org.junit.Test
 class CaptureViewModelTest {
 
 
+
+    @Test
+    fun printedReceiptDateOverridesExifDate() {
+        val viewModel = CaptureViewModel()
+        viewModel.applyExifDate(java.time.LocalDate.of(2025, 3, 4))
+
+        viewModel.onReceiptRecognized(
+            "/tmp/receipt.jpg",
+            "給油量 30.25\n単価 168.5\n合計 5000\n日付 2024/05/01"
+        )
+
+        assertEquals(java.time.LocalDate.of(2024, 5, 1), viewModel.recognizedDate)
+        assertEquals(com.fuellog.app.util.DateOrigin.RECEIPT, viewModel.dateOrigin)
+    }
+
     @Test
     fun failedMeterOcrDoesNotKeepPreviousReading() {
         val viewModel = CaptureViewModel()
