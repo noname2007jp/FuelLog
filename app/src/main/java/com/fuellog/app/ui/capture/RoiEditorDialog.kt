@@ -6,6 +6,11 @@ import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -18,6 +23,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
+import androidx.compose.material3.Slider
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
@@ -75,6 +81,9 @@ fun RoiEditorDialog(
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
     var resizeCorner by remember { mutableStateOf<RoiCorner?>(null) }
+    var zoom by remember { mutableStateOf(1f) }
+    val imageHorizontalScroll = rememberScrollState()
+    val imageVerticalScroll = rememberScrollState()
 
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -107,17 +116,38 @@ fun RoiEditorDialog(
                     }) { Text("初期配置に戻す") }
                 }
                 if (active != null) {
-                    Box(modifier = Modifier.fillMaxWidth()) {
-                        Image(
-                            bitmap = bitmap.asImageBitmap(),
-                            contentDescription = "ROI編集対象画像",
-                            modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(6.dp))
+                    Row(verticalAlignment = androidx.compose.ui.Alignment.CenterVertically) {
+                        Text("画像の拡大", modifier = Modifier.padding(end = 8.dp))
+                        Slider(
+                            value = zoom,
+                            onValueChange = { zoom = it },
+                            valueRange = 1f..3f,
+                            steps = 3,
+                            modifier = Modifier.weight(1f)
                         )
-                        Canvas(
+                        Text(String.format(java.util.Locale.US, "%.1fx", zoom), modifier = Modifier.padding(start = 6.dp))
+                    }
+                    Text("拡大時は画像をスクロールして細かく調整できます。", color = Color.Gray)
+                    BoxWithConstraints(modifier = Modifier.fillMaxWidth().heightIn(max = 320.dp)) {
+                        val scaledWidth = maxWidth * zoom
+                        val scaledHeight = scaledWidth * (bitmap.height.toFloat() / bitmap.width.toFloat())
+                        Box(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .matchParentSize()
-                                .pointerInput(selected, bitmap.width, bitmap.height) {
+                                .heightIn(max = 320.dp)
+                                .horizontalScroll(imageHorizontalScroll)
+                                .verticalScroll(imageVerticalScroll)
+                        ) {
+                            Box(modifier = Modifier.width(scaledWidth).height(scaledHeight)) {
+                                Image(
+                                    bitmap = bitmap.asImageBitmap(),
+                                    contentDescription = "ROI編集対象画像",
+                                    modifier = Modifier.fillMaxSize().clip(RoundedCornerShape(6.dp))
+                                )
+                                Canvas(
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .pointerInput(selected, bitmap.width, bitmap.height) {
                                     detectDragGestures(
                                         onDragStart = { position ->
                                             val current = rois.firstOrNull { it.target == selected }
@@ -147,27 +177,29 @@ fun RoiEditorDialog(
                                         if (index >= 0) rois[index] = updated
                                     }
                                 }
-                        ) {
-                            rois.forEach { roi ->
-                                val isActive = roi.target == selected
-                                val color = if (isActive) Color(0xFFFFC107) else Color(0xFF4FC3F7)
-                                drawRect(
-                                    color = color.copy(alpha = if (isActive) 0.9f else 0.35f),
-                                    topLeft = Offset(roi.left * size.width, roi.top * size.height),
-                                    size = androidx.compose.ui.geometry.Size(
-                                        (roi.right - roi.left) * size.width,
-                                        (roi.bottom - roi.top) * size.height
-                                    ),
-                                    style = Stroke(width = if (isActive) 3.dp.toPx() else 1.dp.toPx())
-                                )
-                                if (isActive) {
-                                    listOf(
-                                        Offset(roi.left * size.width, roi.top * size.height),
-                                        Offset(roi.right * size.width, roi.top * size.height),
-                                        Offset(roi.left * size.width, roi.bottom * size.height),
-                                        Offset(roi.right * size.width, roi.bottom * size.height)
-                                    ).forEach { point ->
-                                        drawCircle(color = color, radius = 8.dp.toPx(), center = point)
+                                ) {
+                                    rois.forEach { roi ->
+                                        val isActive = roi.target == selected
+                                        val color = if (isActive) Color(0xFFFFC107) else Color(0xFF4FC3F7)
+                                        drawRect(
+                                            color = color.copy(alpha = if (isActive) 0.9f else 0.35f),
+                                            topLeft = Offset(roi.left * size.width, roi.top * size.height),
+                                            size = androidx.compose.ui.geometry.Size(
+                                                (roi.right - roi.left) * size.width,
+                                                (roi.bottom - roi.top) * size.height
+                                            ),
+                                            style = Stroke(width = if (isActive) 3.dp.toPx() else 1.dp.toPx())
+                                        )
+                                        if (isActive) {
+                                            listOf(
+                                                Offset(roi.left * size.width, roi.top * size.height),
+                                                Offset(roi.right * size.width, roi.top * size.height),
+                                                Offset(roi.left * size.width, roi.bottom * size.height),
+                                                Offset(roi.right * size.width, roi.bottom * size.height)
+                                            ).forEach { point ->
+                                                drawCircle(color = color, radius = 8.dp.toPx(), center = point)
+                                            }
+                                        }
                                     }
                                 }
                             }
