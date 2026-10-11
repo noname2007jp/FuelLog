@@ -14,6 +14,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.horizontalScroll
@@ -81,6 +82,7 @@ fun RoiEditorDialog(
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
     var resizeCorner by remember { mutableStateOf<RoiCorner?>(null) }
+    var dragRoi by remember { mutableStateOf(false) }
     var zoom by remember { mutableStateOf(1f) }
     val imageHorizontalScroll = rememberScrollState()
     val imageVerticalScroll = rememberScrollState()
@@ -163,10 +165,15 @@ fun RoiEditorDialog(
                                                         kotlin.math.abs(position.y - point.y) <= radius
                                                 }?.first
                                             }
+                                            dragRoi = current?.let { roi ->
+                                                position.x in (roi.left * size.width)..(roi.right * size.width) &&
+                                                    position.y in (roi.top * size.height)..(roi.bottom * size.height)
+                                            } == true || resizeCorner != null
                                         },
-                                        onDragEnd = { resizeCorner = null },
-                                        onDragCancel = { resizeCorner = null }
+                                        onDragEnd = { resizeCorner = null; dragRoi = false },
+                                        onDragCancel = { resizeCorner = null; dragRoi = false }
                                     ) { change, dragAmount ->
+                                        if (!dragRoi) return@detectDragGestures
                                         change.consume()
                                         val current = rois.firstOrNull { it.target == selected } ?: return@detectDragGestures
                                         val dx = dragAmount.x / size.width
