@@ -4,6 +4,7 @@ import android.graphics.BitmapFactory
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.gestures.detectDragGestures
+import androidx.compose.foundation.gestures.scrollBy
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -173,7 +174,13 @@ fun RoiEditorDialog(
                                         onDragEnd = { resizeCorner = null; dragRoi = false },
                                         onDragCancel = { resizeCorner = null; dragRoi = false }
                                     ) { change, dragAmount ->
-                                        if (!dragRoi) return@detectDragGestures
+                                        if (!dragRoi) {
+                                            // ROI枠の外をドラッグした場合は、拡大画像をパンして隠れた部分を表示する。
+                                            imageHorizontalScroll.dispatchRawDelta(-dragAmount.x)
+                                            imageVerticalScroll.dispatchRawDelta(-dragAmount.y)
+                                            change.consume()
+                                            return@detectDragGestures
+                                        }
                                         change.consume()
                                         val current = rois.firstOrNull { it.target == selected } ?: return@detectDragGestures
                                         val dx = dragAmount.x / size.width
