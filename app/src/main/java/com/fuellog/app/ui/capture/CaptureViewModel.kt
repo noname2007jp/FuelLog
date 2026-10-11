@@ -67,10 +67,14 @@ class CaptureViewModel : ViewModel() {
     fun onDashboardRecognized(path: String, text: String, target: CaptureTarget) {
         meterPhotoPath = path
         val result = OcrAnalyzer.parseDashboard(text)
-        val fallbackOdometer = if (target == CaptureTarget.ODOMETER) {
+        val fallbackOdometer = if (target == CaptureTarget.ODOMETER &&
+            result.tripAKm == null && result.tripBKm == null
+        ) {
             OcrAnalyzer.parseOdometer(text)?.let { OcrAnalyzer.mergeOdometerWithTripADecimal(it, result.tripAKm) }
         } else null
-        val fallbackTripB = if (target == CaptureTarget.TRIP) OcrAnalyzer.parseTrip(text) else null
+        val fallbackTripB = if (target == CaptureTarget.TRIP &&
+            result.tripAKm == null && result.tripBKm == null
+        ) OcrAnalyzer.parseTrip(text) else null
         odometerKm = result.odometerKm ?: fallbackOdometer
         tripAKm = result.tripAKm
         tripKm = result.tripBKm ?: fallbackTripB
