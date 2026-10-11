@@ -117,62 +117,31 @@ fun CaptureScreen(
                 when (currentTarget) {
                     CaptureTarget.RECEIPT -> {
                         viewModel.applyExifDate(exifDate)
+                        // Keep the original full-receipt scan and automatic field detection.
+                        // ROI OCR is supplemental only, so configuring ROI never disables full scan.
+                        val fullText = ocrEngine.recognizeReceipt(uri)
                         val amountRoi = roi(RoiTarget.FUEL_AMOUNT)
                         val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
                         val totalRoi = roi(RoiTarget.TOTAL)
                         val dateRoi = roi(RoiTarget.DATE)
-                        val roiConfigured = amountRoi != null && unitPriceRoi != null &&
+                        val roiText = if (amountRoi != null && unitPriceRoi != null &&
                             totalRoi != null && dateRoi != null
-                        val text = if (roiConfigured) {
-                            val litersText = ocrEngine.recognizeRegion(normalizedFile, amountRoi!!, useJapanese = true)
-                            val unitText = ocrEngine.recognizeRegion(normalizedFile, unitPriceRoi!!, useJapanese = true)
-                            val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi!!, useJapanese = true)
-                            val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi!!, useJapanese = true)
+                        ) {
+                            val litersText = ocrEngine.recognizeRegion(normalizedFile, amountRoi, useJapanese = true)
+                            val unitText = ocrEngine.recognizeRegion(normalizedFile, unitPriceRoi, useJapanese = true)
+                            val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi, useJapanese = true)
+                            val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi, useJapanese = true)
                             "給油量 $litersText\n単価 $unitText\n合計 $totalText\n日付 $dateText"
-                        } else if (wholeRoi != null) {
+                        } else if (wholeRoi != null && fullText.isBlank()) {
                             ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
-                        } else {
-                            ocrEngine.recognizeReceipt(uri)
-                        }
+                        } else ""
+                        val text = listOf(fullText, roiText).filter { it.isNotBlank() }.joinToString("\n")
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
-                    CaptureTarget.ODOMETER -> {
-                        val integerRoi = roi(RoiTarget.ODOMETER_INTEGER)
-                        val decimalRoi = roi(RoiTarget.ODOMETER_DECIMAL)
-                        if (integerRoi != null && decimalRoi != null) {
-                            val value = ocrEngine.recognizeOdometer(normalizedFile, integerRoi, decimalRoi)
-                            viewModel.onOdometerRecognized(
-                                normalizedFile.absolutePath,
-                                value?.let { String.format(java.util.Locale.US, "%.1f", it) } ?: ""
-                            )
-                        } else {
-                            val text = if (wholeRoi != null) {
-                                ocrEngine.recognizeRegion(normalizedFile, wholeRoi)
-                            } else {
-                                ocrEngine.recognizeMeter(uri)
-                            }
-                            viewModel.onOdometerRecognized(normalizedFile.absolutePath, text)
-                        }
-                    }
-                    CaptureTarget.TRIP -> {
-                        val integerRoi = roi(RoiTarget.TRIP_INTEGER)
-                        val decimalRoi = roi(RoiTarget.TRIP_DECIMAL)
-                        if (integerRoi != null && decimalRoi != null) {
-                            val integerText = ocrEngine.recognizeRegion(normalizedFile, integerRoi)
-                            val decimalText = ocrEngine.recognizeRegion(normalizedFile, decimalRoi)
-                            val value = com.fuellog.app.ocr.OcrAnalyzer.combineOdometer(integerText, decimalText)
-                            viewModel.onTripRecognized(
-                                normalizedFile.absolutePath,
-                                value?.let { String.format(java.util.Locale.US, "%.1f", it) } ?: ""
-                            )
-                        } else {
-                            val text = if (wholeRoi != null) {
-                                ocrEngine.recognizeRegion(normalizedFile, wholeRoi)
-                            } else {
-                                ocrEngine.recognizeMeter(uri)
-                            }
-                            viewModel.onTripRecognized(normalizedFile.absolutePath, text)
-                        }
+                    CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
+                        // Scan the whole dashboard to retain ODO/TRIP A/TRIP B labels for classification.
+                        val text = ocrEngine.recognizeMeter(uri)
+                        viewModel.onDashboardRecognized(normalizedFile.absolutePath, text, currentTarget)
                     }
                 }
             } catch (e: Exception) {
