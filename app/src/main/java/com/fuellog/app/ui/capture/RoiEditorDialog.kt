@@ -103,6 +103,7 @@ fun RoiEditorDialog(
                     OutlinedButton(onClick = {
                         rois.clear()
                         rois.addAll(defaultRois())
+                        if (rois.none { it.target == selected }) rois.add(defaultRoi(selected))
                     }) { Text("初期配置に戻す") }
                 }
                 if (active != null) {
