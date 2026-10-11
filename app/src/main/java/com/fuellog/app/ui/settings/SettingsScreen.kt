@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
@@ -60,7 +62,7 @@ fun SettingsScreen(viewModel: RecordsViewModel) {
     }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("⚙️ 設定", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C2B21))
@@ -94,7 +96,7 @@ fun SettingsScreen(viewModel: RecordsViewModel) {
             ) {
                 Text("燃費の計算方法", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "・トリップメーターの値を優先して使用します\n" +
+                    "・トリップB（前回満タンから今回給油までの距離）を優先して使用します\n" +
                         "・トリップ未入力時はオドメーター(総走行距離)の差分から計算します\n" +
                         "・オドメーター値はメモとして全期間保存されます\n" +
                         "・燃費 = 走行距離 ÷ 給油量",
