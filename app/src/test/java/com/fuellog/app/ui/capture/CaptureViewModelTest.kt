@@ -23,6 +23,27 @@ class CaptureViewModelTest {
     }
 
     @Test
+    fun dashboardOcrSetsOdometerTripAAndTripBSeparately() {
+        val viewModel = CaptureViewModel()
+        viewModel.onDashboardRecognized(
+            "/tmp/dashboard.jpg",
+            """ODO
+123456
+TRIP A
+123456.7
+TRIP B
+321.4
+AVG
+15.6 km/L""",
+            CaptureTarget.ODOMETER
+        )
+        assertEquals(123456.7, viewModel.odometerKm!!, 0.0001)
+        assertEquals(123456.7, viewModel.tripAKm!!, 0.0001)
+        assertEquals(321.4, viewModel.tripKm!!, 0.0001)
+        assertEquals(15.6, viewModel.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+    }
+
+    @Test
     fun failedMeterOcrDoesNotKeepPreviousReading() {
         val viewModel = CaptureViewModel()
 
