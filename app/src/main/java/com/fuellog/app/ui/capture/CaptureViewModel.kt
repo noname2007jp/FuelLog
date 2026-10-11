@@ -79,7 +79,7 @@ class CaptureViewModel : ViewModel() {
                 tripAKm = result.tripAKm
                 val count = listOf(odometerKm, tripAKm).count { it != null }
                 infoMessage = if (count > 0) {
-                    "メーターAを読み取りました（ODO・トリップA：$count項目）。必要に応じて確認・修正してください"
+                    "メーターAを読み取りました（ODO・トリップA：${count}項目）。必要に応じて確認・修正してください"
                 } else {
                     "ODO・トリップAを判定できませんでした。確認画面で手入力してください"
                 }
@@ -91,7 +91,7 @@ class CaptureViewModel : ViewModel() {
                 vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
                 val count = listOf(tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
                 infoMessage = if (count > 0) {
-                    "メーターBを読み取りました（トリップB・車載燃費：$count項目）。必要に応じて確認・修正してください"
+                    "メーターBを読み取りました（トリップB・車載燃費：${count}項目）。必要に応じて確認・修正してください"
                 } else {
                     "トリップB・車載燃費を判定できませんでした。確認画面で手入力してください"
                 }
