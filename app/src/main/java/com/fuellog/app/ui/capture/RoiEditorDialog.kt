@@ -68,20 +68,7 @@ fun RoiEditorDialog(
     val rois = remember(imageFile.absolutePath) {
         mutableStateListOf<NormalizedRoi>().apply {
             addAll(roiStore.load())
-            if (isEmpty()) {
-                addAll(
-                    listOf(
-                        NormalizedRoi(RoiTarget.ODOMETER_INTEGER, .15f, .35f, .75f, .52f),
-                        NormalizedRoi(RoiTarget.ODOMETER_DECIMAL, .70f, .35f, .88f, .52f),
-                        NormalizedRoi(RoiTarget.TRIP_INTEGER, .15f, .48f, .75f, .65f),
-                        NormalizedRoi(RoiTarget.TRIP_DECIMAL, .70f, .48f, .88f, .65f),
-                        NormalizedRoi(RoiTarget.FUEL_AMOUNT, .40f, .30f, .90f, .42f),
-                        NormalizedRoi(RoiTarget.UNIT_PRICE, .40f, .42f, .90f, .54f),
-                        NormalizedRoi(RoiTarget.TOTAL, .40f, .54f, .90f, .66f),
-                        NormalizedRoi(RoiTarget.DATE, .35f, .05f, .95f, .18f)
-                    )
-                )
-            }
+            if (isEmpty()) addAll(defaultRois())
         }
     }
     var selected by remember { mutableStateOf(RoiTarget.ODOMETER_INTEGER) }
@@ -111,6 +98,12 @@ fun RoiEditorDialog(
                             label = { Text(target.label) }
                         )
                     }
+                }
+                Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    OutlinedButton(onClick = {
+                        rois.clear()
+                        rois.addAll(defaultRois())
+                    }) { Text("初期配置に戻す") }
                 }
                 if (active != null) {
                     Box(modifier = Modifier.fillMaxWidth()) {
@@ -195,6 +188,17 @@ fun RoiEditorDialog(
         }
     )
 }
+
+private fun defaultRois() = listOf(
+    NormalizedRoi(RoiTarget.ODOMETER_INTEGER, .15f, .35f, .75f, .52f),
+    NormalizedRoi(RoiTarget.ODOMETER_DECIMAL, .70f, .35f, .88f, .52f),
+    NormalizedRoi(RoiTarget.TRIP_INTEGER, .15f, .48f, .75f, .65f),
+    NormalizedRoi(RoiTarget.TRIP_DECIMAL, .70f, .48f, .88f, .65f),
+    NormalizedRoi(RoiTarget.FUEL_AMOUNT, .40f, .30f, .90f, .42f),
+    NormalizedRoi(RoiTarget.UNIT_PRICE, .40f, .42f, .90f, .54f),
+    NormalizedRoi(RoiTarget.TOTAL, .40f, .54f, .90f, .66f),
+    NormalizedRoi(RoiTarget.DATE, .35f, .05f, .95f, .18f)
+)
 
 private fun defaultRoi(target: RoiTarget) = when (target) {
     RoiTarget.ODOMETER_INTEGER -> NormalizedRoi(target, .15f, .35f, .75f, .52f)
