@@ -72,7 +72,8 @@ object OcrAnalyzer {
         val tripA = valueNear(listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"), { it in 0.0..9999999.9 })
         val tripB = valueNear(listOf("TRIP B", "TRIP-B", "TRIPB", "トリップB", "トリップ Ｂ", "B TRIP"), { it in 0.0..9999999.9 })
         // If A/B labels were found, do not mistake their long readings for the odometer.
-        val odoRaw = labeledOdometer ?: if (tripA == null && tripB == null) parseOdometer(text) else null
+        val odoRaw = (labeledOdometer ?: if (tripA == null && tripB == null) parseOdometer(text) else null)
+            ?.toLong()?.toDouble()
         val vehicleEconomy = valueNear(
             listOf("AVG", "平均燃費", "燃費", "KM/L", "KM／L"),
             { it in 1.0..99.9 }
@@ -86,8 +87,8 @@ object OcrAnalyzer {
      * the thousands place. Otherwise the odometer is retained as an integer value.
      */
     fun mergeOdometerWithTripADecimal(odometerInteger: Double, tripA: Double?): Double {
-        if (tripA == null || odometerInteger < 1000.0) return odometerInteger
         val odoWhole = odometerInteger.toLong()
+        if (tripA == null || odoWhole < 1000L) return odoWhole.toDouble()
         val tripWhole = tripA.toLong()
         if (odoWhole / 1000L != tripWhole / 1000L) return odometerInteger
         val decimal = ((tripA * 10).toLong() % 10).coerceIn(0L, 9L)
