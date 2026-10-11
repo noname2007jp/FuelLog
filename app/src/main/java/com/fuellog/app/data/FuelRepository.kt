@@ -11,6 +11,7 @@ class FuelRepository(private val dao: FuelRecordDao) {
 
     suspend fun findById(id: Long): FuelRecord? = dao.findById(id)
     suspend fun insert(record: FuelRecord): Long = dao.insert(record)
+    suspend fun insertAll(records: List<FuelRecord>): List<Long> = dao.insertAll(records)
     suspend fun update(record: FuelRecord) = dao.update(record)
     suspend fun delete(record: FuelRecord) = dao.delete(record)
     suspend fun deleteAll() = dao.deleteAll()
