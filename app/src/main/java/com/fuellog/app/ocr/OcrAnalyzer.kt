@@ -68,10 +68,11 @@ object OcrAnalyzer {
             return null
         }
 
-        val odoRaw = valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
-            ?: parseOdometer(text)
+        val labeledOdometer = valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
         val tripA = valueNear(listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"), { it in 0.0..9999999.9 })
         val tripB = valueNear(listOf("TRIP B", "TRIP-B", "TRIPB", "トリップB", "トリップ Ｂ", "B TRIP"), { it in 0.0..9999999.9 })
+        // If A/B labels were found, do not mistake their long readings for the odometer.
+        val odoRaw = labeledOdometer ?: if (tripA == null && tripB == null) parseOdometer(text) else null
         val vehicleEconomy = valueNear(
             listOf("AVG", "平均燃費", "燃費", "KM/L", "KM／L"),
             { it in 1.0..99.9 }
