@@ -32,14 +32,18 @@ class CaptureViewModel : ViewModel() {
     fun onReceiptRecognized(path: String, text: String) {
         receiptPhotoPath = path
         val result = OcrAnalyzer.parseReceipt(text)
-        fuelLiters = result.fuelLiters ?: fuelLiters
-        costYen = result.costYen ?: costYen
-        unitPrice = result.unitPrice ?: unitPrice
+        // 新しいレシートの結果で置き換える。読み取れなかった項目に前の画像の値を残さない。
+        fuelLiters = result.fuelLiters
+        costYen = result.costYen
+        unitPrice = result.unitPrice
         result.receiptDate?.let {
             recognizedDate = it
             dateOrigin = DateOrigin.RECEIPT
         }
-        infoMessage = if (result.fuelLiters != null || result.receiptDate != null) {
+        infoMessage = if (
+            result.fuelLiters != null || result.costYen != null ||
+            result.unitPrice != null || result.receiptDate != null
+        ) {
             "レシートを読み取りました"
         } else {
             "レシートの数値・日付を読み取れませんでした。確認画面で修正してください"
