@@ -53,6 +53,7 @@ AVG
         assertEquals(15.6, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
 
         assertEquals(123456.0, OcrAnalyzer.mergeOdometerWithTripADecimal(123456.0, 123.4), 0.0001)
+        assertEquals(123456.0, OcrAnalyzer.mergeOdometerWithTripADecimal(123456.7, 123.4), 0.0001)
         assertEquals(123456.7, OcrAnalyzer.mergeOdometerWithTripADecimal(123456.0, 123456.7), 0.0001)
     }
 
