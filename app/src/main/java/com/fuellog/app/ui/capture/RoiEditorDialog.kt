@@ -74,16 +74,27 @@ fun RoiEditorDialog(
 
     val rois = remember(imageFile.absolutePath) {
         mutableStateListOf<NormalizedRoi>().apply {
-            addAll(roiStore.load().filter { it.target.editable })
+            val saved = roiStore.load()
+            addAll(saved.filter { it.target.editable })
             if (isEmpty()) {
                 addAll(defaultRois())
             } else {
+                // 旧バージョンの「メーター全体」ROIを、新しいA/B別ROIへ引き継ぐ。
+                // 個別ROIが既に保存されている場合は、ユーザー設定を優先する。
+                val legacyDashboard = saved.firstOrNull { it.target == RoiTarget.DASHBOARD }
                 listOf(
                     RoiTarget.RECEIPT_FRAME,
                     RoiTarget.METER_A_FRAME,
                     RoiTarget.METER_B_FRAME
                 ).forEach { target ->
-                    if (none { it.target == target }) add(defaultRoi(target))
+                    if (none { it.target == target }) {
+                        val migrated = if (target == RoiTarget.METER_A_FRAME ||
+                            target == RoiTarget.METER_B_FRAME
+                        ) {
+                            legacyDashboard?.copy(target = target)
+                        } else null
+                        add(migrated ?: defaultRoi(target))
+                    }
                 }
             }
         }
