@@ -113,6 +113,7 @@ fun CaptureScreen(
                 val uri = Uri.fromFile(normalizedFile)
                 val savedRois = roiStore.load()
                 fun roi(target: RoiTarget) = savedRois.firstOrNull { it.target == target }
+                val wholeRoi = roi(RoiTarget.WHOLE)
                 when (currentTarget) {
                     CaptureTarget.RECEIPT -> {
                         viewModel.applyExifDate(exifDate)
@@ -128,6 +129,8 @@ fun CaptureScreen(
                             val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi!!, useJapanese = true)
                             val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi!!, useJapanese = true)
                             "給油量 $litersText\n単価 $unitText\n合計 $totalText\n日付 $dateText"
+                        } else if (wholeRoi != null) {
+                            ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
                         } else {
                             ocrEngine.recognizeReceipt(uri)
                         }
@@ -143,7 +146,12 @@ fun CaptureScreen(
                                 value?.let { String.format(java.util.Locale.US, "%.1f", it) } ?: ""
                             )
                         } else {
-                            viewModel.onOdometerRecognized(normalizedFile.absolutePath, ocrEngine.recognizeMeter(uri))
+                            val text = if (wholeRoi != null) {
+                                ocrEngine.recognizeRegion(normalizedFile, wholeRoi)
+                            } else {
+                                ocrEngine.recognizeMeter(uri)
+                            }
+                            viewModel.onOdometerRecognized(normalizedFile.absolutePath, text)
                         }
                     }
                     CaptureTarget.TRIP -> {
@@ -158,7 +166,12 @@ fun CaptureScreen(
                                 value?.let { String.format(java.util.Locale.US, "%.1f", it) } ?: ""
                             )
                         } else {
-                            viewModel.onTripRecognized(normalizedFile.absolutePath, ocrEngine.recognizeMeter(uri))
+                            val text = if (wholeRoi != null) {
+                                ocrEngine.recognizeRegion(normalizedFile, wholeRoi)
+                            } else {
+                                ocrEngine.recognizeMeter(uri)
+                            }
+                            viewModel.onTripRecognized(normalizedFile.absolutePath, text)
                         }
                     }
                 }
