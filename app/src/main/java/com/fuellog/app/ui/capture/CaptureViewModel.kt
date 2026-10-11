@@ -21,7 +21,9 @@ class CaptureViewModel : ViewModel() {
     var costYen: Int? by mutableStateOf(null); private set
     var unitPrice: Double? by mutableStateOf(null); private set
     var odometerKm: Double? by mutableStateOf(null); private set
+    var tripAKm: Double? by mutableStateOf(null); private set
     var tripKm: Double? by mutableStateOf(null); private set
+    var vehicleFuelEconomyKmPerLiter: Double? by mutableStateOf(null); private set
     var recognizedDate: LocalDate by mutableStateOf(LocalDate.now()); private set
     var dateOrigin: DateOrigin by mutableStateOf(DateOrigin.TODAY); private set
 
@@ -59,6 +61,27 @@ class CaptureViewModel : ViewModel() {
             recognizedDate = date
             dateOrigin = DateOrigin.EXIF
         }
+    }
+
+    /** Read the full dashboard so ODO, Trip A/B and the vehicle economy can be identified together. */
+    fun onDashboardRecognized(path: String, text: String, target: CaptureTarget) {
+        meterPhotoPath = path
+        val result = OcrAnalyzer.parseDashboard(text)
+        val fallbackOdometer = if (target == CaptureTarget.ODOMETER) {
+            OcrAnalyzer.parseOdometer(text)?.let { OcrAnalyzer.mergeOdometerWithTripADecimal(it, result.tripAKm) }
+        } else null
+        val fallbackTripB = if (target == CaptureTarget.TRIP) OcrAnalyzer.parseTrip(text) else null
+        odometerKm = result.odometerKm ?: fallbackOdometer
+        tripAKm = result.tripAKm
+        tripKm = result.tripBKm ?: fallbackTripB
+        vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
+        val count = listOf(odometerKm, tripAKm, tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
+        infoMessage = if (count > 0) {
+            "メーターを読み取りました（$count項目）。必要に応じて確認・修正してください"
+        } else {
+            "メーターの値を判定できませんでした。確認画面で手入力してください"
+        }
+        errorMessage = null
     }
 
     fun onOdometerRecognized(path: String, text: String) {
@@ -100,7 +123,9 @@ class CaptureViewModel : ViewModel() {
         costYen = null
         unitPrice = null
         odometerKm = null
+        tripAKm = null
         tripKm = null
+        vehicleFuelEconomyKmPerLiter = null
         recognizedDate = LocalDate.now()
         dateOrigin = DateOrigin.TODAY
         isProcessing = false
