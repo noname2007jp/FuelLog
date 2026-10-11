@@ -140,8 +140,8 @@ fun CaptureScreen(
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
-                        // Use the configured broad meter ROI when present; otherwise scan the full image.
-                        // Keeping the surrounding labels lets OCR distinguish ODO, Trip A and Trip B.
+                        // メーターA/Bは別々に撮影する。A写真ではODO・Trip A、B写真ではTrip B・車載燃費を採用する。
+                        // 読み取り画像のパスは給油記録へ保存しない。
                         val text = if (dashboardRoi != null) {
                             ocrEngine.recognizeRegion(normalizedFile, dashboardRoi, useJapanese = true)
                         } else {
@@ -411,11 +411,11 @@ private fun buildStatusText(viewModel: CaptureViewModel): String = buildString {
             ?: if (viewModel.receiptPhotoPath != null) "撮影済" else "未撮影"
     )
     viewModel.costYen?.let { append(" / ¥${Formatters.money(it)}") }
-    append("    オド: ")
+    append("    ODO: ")
     append(viewModel.odometerKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
-    append("    A: ")
+    append("    Trip A: ")
     append(viewModel.tripAKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
-    append("    B: ")
+    append("    Trip B: ")
     append(viewModel.tripKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
     viewModel.vehicleFuelEconomyKmPerLiter?.let {
         append("    車載燃費: ${Formatters.fmt1(it)}km/L")
