@@ -75,7 +75,17 @@ fun RoiEditorDialog(
     val rois = remember(imageFile.absolutePath) {
         mutableStateListOf<NormalizedRoi>().apply {
             addAll(roiStore.load().filter { it.target.editable })
-            if (isEmpty()) addAll(defaultRois())
+            if (isEmpty()) {
+                addAll(defaultRois())
+            } else {
+                listOf(
+                    RoiTarget.RECEIPT_FRAME,
+                    RoiTarget.METER_A_FRAME,
+                    RoiTarget.METER_B_FRAME
+                ).forEach { target ->
+                    if (none { it.target == target }) add(defaultRoi(target))
+                }
+            }
         }
     }
     var selected by remember { mutableStateOf(RoiTarget.METER_A_FRAME) }
