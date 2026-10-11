@@ -118,13 +118,8 @@ fun CaptureScreen(
                 when (currentTarget) {
                     CaptureTarget.RECEIPT -> {
                         viewModel.applyExifDate(exifDate)
-                        // Keep the original full-receipt scan and automatic field detection.
-                        // ROI OCR is supplemental only, so configuring ROI never disables full scan.
+                        // 従来のレシート全体OCRを維持する。レシート全体ROIの重複OCRは解析結果を混乱させるため行わない。
                         val fullText = ocrEngine.recognizeReceipt(uri)
-                        val receiptFrameRoi = roi(RoiTarget.RECEIPT_FRAME)
-                        val frameText = receiptFrameRoi?.let {
-                            ocrEngine.recognizeRegion(normalizedFile, it, useJapanese = true)
-                        }.orEmpty()
                         val amountRoi = roi(RoiTarget.FUEL_AMOUNT)
                         val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
                         val totalRoi = roi(RoiTarget.TOTAL)
@@ -140,7 +135,8 @@ fun CaptureScreen(
                         } else if (wholeRoi != null && fullText.isBlank()) {
                             ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
                         } else ""
-                        val text = listOf(fullText, frameText, roiText).filter { it.isNotBlank() }.joinToString("\n")
+                        // 既存の全体OCR結果に、項目別ROIの結果だけを補助情報として追加する。
+                        val text = listOf(fullText, roiText).filter { it.isNotBlank() }.joinToString("\n")
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
