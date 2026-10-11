@@ -21,7 +21,7 @@ object CsvImporter {
         val dateCol = column("日付", "date")
         val odometerCol = column("オドメーター", "odometer")
         val tripACol = column("トリップA", "tripa", "trip a")
-        val tripBCol = column("トリップB", "区間距離", "tripb", "trip b", "trip")
+        val tripBCol = column("トリップB", "区間距離", "tripb", "trip b", "trip(km)")
         val fuelCol = column("給油量", "fuel")
         val costCol = column("金額", "cost")
         val priceCol = column("単価", "unit price", "unitprice")
