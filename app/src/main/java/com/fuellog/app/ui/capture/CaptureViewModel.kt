@@ -77,7 +77,7 @@ class CaptureViewModel : ViewModel() {
         vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
         val count = listOf(odometerKm, tripAKm, tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
         infoMessage = if (count > 0) {
-            "メーターを読み取りました（$count項目）。必要に応じて確認・修正してください"
+            "メーターを読み取りました（${count}項目）。必要に応じて確認・修正してください"
         } else {
             "メーターの値を判定できませんでした。確認画面で手入力してください"
         }
