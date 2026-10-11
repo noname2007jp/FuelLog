@@ -10,8 +10,8 @@ import java.time.LocalDate
 
 enum class CaptureTarget(val label: String, val guide: String) {
     RECEIPT("🧾 レシート", "レシート全体を枠に合わせてください"),
-    ODOMETER("🚗 メーター", "ODO・トリップA/B・車載燃費の表示を含めて撮影してください"),
-    TRIP("🔁 再読み取り", "メーター全体を撮影し、ODO・トリップA/B・車載燃費を再判定します")
+    ODOMETER("🚗 メーターA", "ODOとトリップAの表示を含めて撮影してください"),
+    TRIP("🔁 メーターB", "トリップBと車載燃費の表示を含めて撮影してください")
 }
 
 class CaptureViewModel : ViewModel() {
@@ -63,27 +63,40 @@ class CaptureViewModel : ViewModel() {
         }
     }
 
-    /** Read the full dashboard so ODO, Trip A/B and the vehicle economy can be identified together. */
+    /**
+     * メーターA写真からODOとTrip Aだけを採用する。
+     * 写真自体は給油記録に紐付けず、読み取り結果だけを保持する。
+     */
     fun onDashboardRecognized(path: String, text: String, target: CaptureTarget) {
-        meterPhotoPath = path
         val result = OcrAnalyzer.parseDashboard(text)
-        val fallbackOdometer = if (target == CaptureTarget.ODOMETER &&
-            result.tripAKm == null && result.tripBKm == null
-        ) {
-            OcrAnalyzer.parseOdometer(text)?.let { OcrAnalyzer.mergeOdometerWithTripADecimal(it, result.tripAKm) }
-        } else null
-        val fallbackTripB = if (target == CaptureTarget.TRIP &&
-            result.tripAKm == null && result.tripBKm == null
-        ) OcrAnalyzer.parseTrip(text) else null
-        odometerKm = result.odometerKm ?: fallbackOdometer
-        tripAKm = result.tripAKm
-        tripKm = result.tripBKm ?: fallbackTripB
-        vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
-        val count = listOf(odometerKm, tripAKm, tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
-        infoMessage = if (count > 0) {
-            "メーターを読み取りました（${count}項目）。必要に応じて確認・修正してください"
-        } else {
-            "メーターの値を判定できませんでした。確認画面で手入力してください"
+        when (target) {
+            CaptureTarget.ODOMETER -> {
+                odometerKm = result.odometerKm ?: if (result.tripAKm == null && result.tripBKm == null) {
+                    OcrAnalyzer.parseOdometer(text)?.let {
+                        OcrAnalyzer.mergeOdometerWithTripADecimal(it, result.tripAKm)
+                    }
+                } else null
+                tripAKm = result.tripAKm
+                val count = listOf(odometerKm, tripAKm).count { it != null }
+                infoMessage = if (count > 0) {
+                    "メーターAを読み取りました（ODO・トリップA：$count項目）。必要に応じて確認・修正してください"
+                } else {
+                    "ODO・トリップAを判定できませんでした。確認画面で手入力してください"
+                }
+            }
+            CaptureTarget.TRIP -> {
+                tripKm = result.tripBKm ?: if (result.tripAKm == null && result.tripBKm == null) {
+                    OcrAnalyzer.parseTrip(text)
+                } else null
+                vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
+                val count = listOf(tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
+                infoMessage = if (count > 0) {
+                    "メーターBを読み取りました（トリップB・車載燃費：$count項目）。必要に応じて確認・修正してください"
+                } else {
+                    "トリップB・車載燃費を判定できませんでした。確認画面で手入力してください"
+                }
+            }
+            CaptureTarget.RECEIPT -> Unit
         }
         errorMessage = null
     }
