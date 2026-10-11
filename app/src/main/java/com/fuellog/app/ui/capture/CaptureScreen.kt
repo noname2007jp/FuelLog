@@ -139,8 +139,13 @@ fun CaptureScreen(
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
-                        // Scan the whole dashboard to retain ODO/TRIP A/TRIP B labels for classification.
-                        val text = ocrEngine.recognizeMeter(uri)
+                        // Use the configured broad meter ROI when present; otherwise scan the full image.
+                        // Keeping the surrounding labels lets OCR distinguish ODO, Trip A and Trip B.
+                        val text = if (wholeRoi != null) {
+                            ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
+                        } else {
+                            ocrEngine.recognizeMeter(uri)
+                        }
                         viewModel.onDashboardRecognized(normalizedFile.absolutePath, text, currentTarget)
                     }
                 }
