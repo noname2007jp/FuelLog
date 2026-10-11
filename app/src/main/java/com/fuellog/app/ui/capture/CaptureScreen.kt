@@ -121,6 +121,10 @@ fun CaptureScreen(
                         // Keep the original full-receipt scan and automatic field detection.
                         // ROI OCR is supplemental only, so configuring ROI never disables full scan.
                         val fullText = ocrEngine.recognizeReceipt(uri)
+                        val receiptFrameRoi = roi(RoiTarget.RECEIPT_FRAME)
+                        val frameText = receiptFrameRoi?.let {
+                            ocrEngine.recognizeRegion(normalizedFile, it, useJapanese = true)
+                        }.orEmpty()
                         val amountRoi = roi(RoiTarget.FUEL_AMOUNT)
                         val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
                         val totalRoi = roi(RoiTarget.TOTAL)
@@ -136,14 +140,19 @@ fun CaptureScreen(
                         } else if (wholeRoi != null && fullText.isBlank()) {
                             ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
                         } else ""
-                        val text = listOf(fullText, roiText).filter { it.isNotBlank() }.joinToString("\n")
+                        val text = listOf(fullText, frameText, roiText).filter { it.isNotBlank() }.joinToString("\n")
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
                         // メーターA/Bは別々に撮影する。A写真ではODO・Trip A、B写真ではTrip B・車載燃費を採用する。
                         // 読み取り画像のパスは給油記録へ保存しない。
-                        val text = if (dashboardRoi != null) {
-                            ocrEngine.recognizeRegion(normalizedFile, dashboardRoi, useJapanese = true)
+                        val meterRoi = when (currentTarget) {
+                            CaptureTarget.ODOMETER -> roi(RoiTarget.METER_A_FRAME) ?: dashboardRoi
+                            CaptureTarget.TRIP -> roi(RoiTarget.METER_B_FRAME) ?: dashboardRoi
+                            CaptureTarget.RECEIPT -> null
+                        }
+                        val text = if (meterRoi != null) {
+                            ocrEngine.recognizeRegion(normalizedFile, meterRoi, useJapanese = true)
                         } else {
                             ocrEngine.recognizeMeter(uri)
                         }
