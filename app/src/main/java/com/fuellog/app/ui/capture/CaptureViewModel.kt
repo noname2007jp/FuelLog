@@ -71,11 +71,7 @@ class CaptureViewModel : ViewModel() {
         val result = OcrAnalyzer.parseDashboard(text)
         when (target) {
             CaptureTarget.ODOMETER -> {
-                odometerKm = result.odometerKm ?: if (result.tripAKm == null && result.tripBKm == null) {
-                    OcrAnalyzer.parseOdometer(text)?.let {
-                        OcrAnalyzer.mergeOdometerWithTripADecimal(it, result.tripAKm)
-                    }
-                } else null
+                odometerKm = result.odometerKm
                 tripAKm = result.tripAKm
                 val count = listOf(odometerKm, tripAKm).count { it != null }
                 infoMessage = if (count > 0) {
