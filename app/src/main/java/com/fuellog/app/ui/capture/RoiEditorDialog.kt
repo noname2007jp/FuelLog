@@ -74,11 +74,11 @@ fun RoiEditorDialog(
 
     val rois = remember(imageFile.absolutePath) {
         mutableStateListOf<NormalizedRoi>().apply {
-            addAll(roiStore.load())
+            addAll(roiStore.load().filter { it.target.editable })
             if (isEmpty()) addAll(defaultRois())
         }
     }
-    var selected by remember { mutableStateOf(RoiTarget.ODOMETER_INTEGER) }
+    var selected by remember { mutableStateOf(RoiTarget.DASHBOARD) }
     val active = rois.firstOrNull { it.target == selected }
     val scroll = rememberScrollState()
     var resizeCorner by remember { mutableStateOf<RoiCorner?>(null) }
@@ -97,7 +97,7 @@ fun RoiEditorDialog(
                     modifier = Modifier.fillMaxWidth().horizontalScroll(scroll),
                     horizontalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
-                    RoiTarget.entries.forEach { target ->
+                    RoiTarget.entries.filter { it.editable }.forEach { target ->
                         FilterChip(
                             selected = selected == target,
                             onClick = {
@@ -230,10 +230,7 @@ fun RoiEditorDialog(
 }
 
 private fun defaultRois() = listOf(
-    NormalizedRoi(RoiTarget.ODOMETER_INTEGER, .15f, .35f, .75f, .52f),
-    NormalizedRoi(RoiTarget.ODOMETER_DECIMAL, .70f, .35f, .88f, .52f),
-    NormalizedRoi(RoiTarget.TRIP_INTEGER, .15f, .48f, .75f, .65f),
-    NormalizedRoi(RoiTarget.TRIP_DECIMAL, .70f, .48f, .88f, .65f),
+    NormalizedRoi(RoiTarget.DASHBOARD, .05f, .25f, .95f, .75f),
     NormalizedRoi(RoiTarget.FUEL_AMOUNT, .40f, .30f, .90f, .42f),
     NormalizedRoi(RoiTarget.UNIT_PRICE, .40f, .42f, .90f, .54f),
     NormalizedRoi(RoiTarget.TOTAL, .40f, .54f, .90f, .66f),
