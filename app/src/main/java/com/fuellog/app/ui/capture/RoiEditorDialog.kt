@@ -242,6 +242,7 @@ private fun defaultRoi(target: RoiTarget) = when (target) {
     RoiTarget.ODOMETER_DECIMAL -> NormalizedRoi(target, .70f, .35f, .88f, .52f)
     RoiTarget.TRIP_INTEGER -> NormalizedRoi(target, .15f, .48f, .75f, .65f)
     RoiTarget.TRIP_DECIMAL -> NormalizedRoi(target, .70f, .48f, .88f, .65f)
+    RoiTarget.DASHBOARD -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
     RoiTarget.FUEL_AMOUNT -> NormalizedRoi(target, .40f, .30f, .90f, .42f)
     RoiTarget.UNIT_PRICE -> NormalizedRoi(target, .40f, .42f, .90f, .54f)
     RoiTarget.TOTAL -> NormalizedRoi(target, .40f, .54f, .90f, .66f)
