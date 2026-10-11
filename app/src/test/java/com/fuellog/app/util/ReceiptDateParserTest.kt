@@ -38,7 +38,14 @@ class ReceiptDateParserTest {
     @Test
     fun classifiesDashboardLabelsAndMergesOdometerDecimalOnlyWhenThousandsMatch() {
         val result = OcrAnalyzer.parseDashboard(
-            "ODO\\n123456\\nTRIP A\\n123456.7\\nTRIP B\\n321.4\\nAVG\\n15.6 km/L"
+            """ODO
+123456
+TRIP A
+123456.7
+TRIP B
+321.4
+AVG
+15.6 km/L"""
         )
         assertEquals(123456.7, result.odometerKm!!, 0.0001)
         assertEquals(123456.7, result.tripAKm!!, 0.0001)
