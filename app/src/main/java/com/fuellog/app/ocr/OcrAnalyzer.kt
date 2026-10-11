@@ -90,7 +90,7 @@ object OcrAnalyzer {
         val odoWhole = odometerInteger.toLong()
         if (tripA == null || odoWhole < 1000L) return odoWhole.toDouble()
         val tripWhole = tripA.toLong()
-        if (odoWhole / 1000L != tripWhole / 1000L) return odometerInteger
+        if (odoWhole / 1000L != tripWhole / 1000L) return odoWhole.toDouble()
         val decimal = ((tripA * 10).toLong() % 10).coerceIn(0L, 9L)
         return odoWhole.toDouble() + decimal / 10.0
     }
