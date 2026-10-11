@@ -114,6 +114,7 @@ fun CaptureScreen(
                 val savedRois = roiStore.load()
                 fun roi(target: RoiTarget) = savedRois.firstOrNull { it.target == target }
                 val wholeRoi = roi(RoiTarget.WHOLE)
+                val dashboardRoi = roi(RoiTarget.DASHBOARD) ?: wholeRoi
                 when (currentTarget) {
                     CaptureTarget.RECEIPT -> {
                         viewModel.applyExifDate(exifDate)
@@ -141,8 +142,8 @@ fun CaptureScreen(
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
                         // Use the configured broad meter ROI when present; otherwise scan the full image.
                         // Keeping the surrounding labels lets OCR distinguish ODO, Trip A and Trip B.
-                        val text = if (wholeRoi != null) {
-                            ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
+                        val text = if (dashboardRoi != null) {
+                            ocrEngine.recognizeRegion(normalizedFile, dashboardRoi, useJapanese = true)
                         } else {
                             ocrEngine.recognizeMeter(uri)
                         }
