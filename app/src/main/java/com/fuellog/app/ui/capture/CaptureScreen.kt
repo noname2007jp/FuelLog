@@ -412,8 +412,13 @@ private fun buildStatusText(viewModel: CaptureViewModel): String = buildString {
     viewModel.costYen?.let { append(" / ¥${Formatters.money(it)}") }
     append("    オド: ")
     append(viewModel.odometerKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
-    append("    トリップ: ")
+    append("    A: ")
+    append(viewModel.tripAKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
+    append("    B: ")
     append(viewModel.tripKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
+    viewModel.vehicleFuelEconomyKmPerLiter?.let {
+        append("    車載燃費: ${Formatters.fmt1(it)}km/L")
+    }
 }
 
 private fun takePhoto(
