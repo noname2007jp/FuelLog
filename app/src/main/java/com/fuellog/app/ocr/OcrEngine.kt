@@ -28,7 +28,7 @@ class OcrEngine(private val context: Context) {
     suspend fun recognizeReceipt(uri: Uri): String = recognize(uri, useJapanese = true)
 
     /** メーター画像全体を読み取る。 */
-    suspend fun recognizeMeter(uri: Uri): String = recognize(uri, useJapanese = false)
+    suspend fun recognizeMeter(uri: Uri): String = recognize(uri, useJapanese = true)
 
     /**
      * 正規化ROI（画像比率0..1）で指定した範囲だけをOCRする。
