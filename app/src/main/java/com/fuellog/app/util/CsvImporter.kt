@@ -17,7 +17,7 @@ object CsvImporter {
         if (rows.size < 2) return Result(emptyList(), 0, listOf("CSVにデータ行がありません"))
 
         val header = rows.first().map { normalizeHeader(it) }
-        fun column(vararg names: String): Int = header.indexOfFirst { h -> names.any { h.contains(it) } }
+        fun column(vararg names: String): Int = header.indexOfFirst { h -> names.any { h.contains(normalizeHeader(it)) } }
         val dateCol = column("日付", "date")
         val odometerCol = column("オドメーター", "odometer")
         val tripACol = column("トリップA", "tripa", "trip a")
