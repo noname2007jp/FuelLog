@@ -98,7 +98,7 @@ object OcrAnalyzer {
 
         // Trip A/B: A/Bラベルに続く4桁整数+小数1桁（例: A 0000.0）。
         val tripAFormat = formattedValueNear(
-            Regex("""(?i)(?:^\s*A(?:\s|[:：])|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
+            Regex("""(?i)(?:^\s*A(?!\s*\d{2}\.\d\s*KM\s*/\s*L)(?:\s|[:：])|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
             Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() }
         val tripBFormat = formattedValueNear(
