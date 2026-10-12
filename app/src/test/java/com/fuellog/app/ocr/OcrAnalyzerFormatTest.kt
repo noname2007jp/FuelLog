@@ -88,6 +88,21 @@ class OcrAnalyzerFormatTest {
     }
 
     @Test
+    fun dashboardParsingUsesTripBDecimalEvenWhenWholeDigitsDoNotMatchOdoTail() {
+        val result = OcrAnalyzer.parseDashboard(
+            """
+            ODO
+            012345
+            TRIP B
+            9876.6 km
+            """.trimIndent()
+        )
+
+        assertEquals(12345.6, result.odometerKm!!, 0.0001)
+        assertEquals(9876.6, result.tripBKm!!, 0.0001)
+    }
+
+    @Test
     fun alwaysUsesTripBDecimalEvenWhenTripWholeDoesNotMatchOdometerTail() {
         assertEquals(
             12345.6,
