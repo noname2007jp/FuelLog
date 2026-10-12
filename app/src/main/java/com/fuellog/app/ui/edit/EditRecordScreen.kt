@@ -147,12 +147,12 @@ fun EditRecordScreen(
             }
         }
         if (meterAPhotoPath != null || meterBPhotoPath != null) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 meterAPhotoPath?.let { path ->
-                    PhotoThumbnail(path, "🚗 メーターA", Modifier.weight(1f), onRetake)
+                    PhotoThumbnail(path, "🚗 メーターA", Modifier.fillMaxWidth(), onRetake)
                 }
                 meterBPhotoPath?.let { path ->
-                    PhotoThumbnail(path, "🔁 メーターB", Modifier.weight(1f), onRetake)
+                    PhotoThumbnail(path, "🔁 メーターB", Modifier.fillMaxWidth(), onRetake)
                 }
             }
             Text(
@@ -409,11 +409,11 @@ private fun PhotoThumbnail(
     modifier: Modifier = Modifier,
     onRetake: () -> Unit
 ) {
-    Box(modifier = modifier.height(96.dp).clip(RoundedCornerShape(12.dp))) {
+    Box(modifier = modifier.height(180.dp).clip(RoundedCornerShape(12.dp))) {
         AsyncImage(
             model = File(path),
             contentDescription = label,
-            contentScale = ContentScale.Crop,
+            contentScale = ContentScale.Fit,
             modifier = Modifier.fillMaxSize()
         )
         Text(
