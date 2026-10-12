@@ -74,6 +74,20 @@ class OcrAnalyzerFormatTest {
     }
 
     @Test
+    fun doesNotMistakeTripBForOdometerWhenOdoDigitsAreMissing() {
+        val result = OcrAnalyzer.parseDashboard(
+            """
+            ODO
+            TRIP B
+            2345.6 km
+            """.trimIndent()
+        )
+
+        assertNull(result.odometerKm)
+        assertEquals(2345.6, result.tripBKm!!, 0.0001)
+    }
+
+    @Test
     fun toleratesOneOcrDigitMismatchWhenMergingTripBDecimal() {
         assertEquals(
             12345.6,
