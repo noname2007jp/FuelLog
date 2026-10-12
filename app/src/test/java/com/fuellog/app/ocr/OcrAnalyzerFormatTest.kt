@@ -49,14 +49,14 @@ class OcrAnalyzerFormatTest {
             123456
             TRIP
             B
-            2345.6 km
+            3456.6 km
             AVG
             15.2 km/L
             """.trimIndent()
         )
 
         assertEquals(123456.6, result.odometerKm!!, 0.0001)
-        assertEquals(2345.6, result.tripBKm!!, 0.0001)
+        assertEquals(3456.6, result.tripBKm!!, 0.0001)
     }
 
     @Test
@@ -65,12 +65,12 @@ class OcrAnalyzerFormatTest {
             """
             123456
             TRIP B
-            2345.6 km
+            3456.6 km
             """.trimIndent()
         )
 
         assertEquals(123456.6, result.odometerKm!!, 0.0001)
-        assertEquals(2345.6, result.tripBKm!!, 0.0001)
+        assertEquals(3456.6, result.tripBKm!!, 0.0001)
     }
 
     @Test
