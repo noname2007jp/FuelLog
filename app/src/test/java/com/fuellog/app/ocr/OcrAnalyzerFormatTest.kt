@@ -42,6 +42,38 @@ class OcrAnalyzerFormatTest {
     }
 
     @Test
+    fun parsesTripBWhenTripAndBLabelsAreSplitAcrossLines() {
+        val result = OcrAnalyzer.parseDashboard(
+            """
+            ODO
+            123456
+            TRIP
+            B
+            2345.6 km
+            AVG
+            15.2 km/L
+            """.trimIndent()
+        )
+
+        assertEquals(123456.6, result.odometerKm!!, 0.0001)
+        assertEquals(2345.6, result.tripBKm!!, 0.0001)
+    }
+
+    @Test
+    fun findsOdometerWhenOdoLabelWasMissedByOcr() {
+        val result = OcrAnalyzer.parseDashboard(
+            """
+            123456
+            TRIP B
+            2345.6 km
+            """.trimIndent()
+        )
+
+        assertEquals(123456.6, result.odometerKm!!, 0.0001)
+        assertEquals(2345.6, result.tripBKm!!, 0.0001)
+    }
+
+    @Test
     fun toleratesOneOcrDigitMismatchWhenMergingTripBDecimal() {
         assertEquals(
             12345.6,
