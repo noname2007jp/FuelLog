@@ -143,7 +143,7 @@ fun CaptureScreen(
                         viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
                     }
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
-                        // メーターA/Bは別々に撮影する。A写真ではODO・Trip A、B写真ではTrip B・車載燃費を採用する。
+                        // メーターA/Bは別々に撮影する。A写真ではTrip A・車載燃費、B写真ではODO・Trip Bを採用する。
                         // 読み取り画像のパスは給油記録へ保存しない。
                         val meterRoi = if (useRoiForOcr) {
                             when (currentTarget) {
@@ -153,7 +153,7 @@ fun CaptureScreen(
                             }
                         } else null
                         val text = if (meterRoi != null) {
-                            ocrEngine.recognizeRegion(normalizedFile, meterRoi, useJapanese = true)
+                            ocrEngine.recognizeMeterRegion(normalizedFile, meterRoi)
                         } else {
                             ocrEngine.recognizeMeter(uri)
                         }
