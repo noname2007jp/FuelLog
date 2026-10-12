@@ -2,6 +2,7 @@ package com.fuellog.app.ocr
 
 import com.fuellog.app.util.ReceiptDateParser
 import java.time.LocalDate
+import kotlin.math.roundToLong
 
 /** OCRテキストから給油データ・メーター値を抽出する。 */
 object OcrAnalyzer {
