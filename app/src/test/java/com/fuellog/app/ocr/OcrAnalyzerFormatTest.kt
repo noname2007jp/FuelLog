@@ -35,7 +35,7 @@ class OcrAnalyzerFormatTest {
             """.trimIndent()
         )
 
-        assertEquals(12345.0, result.odometerKm!!, 0.0001)
+        assertEquals(12345.6, result.odometerKm!!, 0.0001)
         assertEquals(12.3, result.tripAKm!!, 0.0001)
         assertEquals(45.6, result.tripBKm!!, 0.0001)
         assertEquals(12.3, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
