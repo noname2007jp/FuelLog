@@ -54,7 +54,9 @@ object OcrAnalyzer {
      * its integer part agrees with the odometer through the thousands place.
      */
     fun parseDashboard(text: String): DashboardResult {
-        val lines = text.lines().map { it.trim() }.filter { it.isNotEmpty() }
+        // 車載メーターの表示形式を優先する。NFKCで全角英数字・小数点を半角にそろえる。
+        val normalizedText = java.text.Normalizer.normalize(text, java.text.Normalizer.Form.NFKC)
+        val lines = normalizedText.lines().map { it.trim() }.filter { it.isNotEmpty() }
         fun valueNear(labels: List<String>, predicate: (Double) -> Boolean): Double? {
             for (i in lines.indices) {
                 val line = lines[i].uppercase()
@@ -68,15 +70,60 @@ object OcrAnalyzer {
             return null
         }
 
-        val labeledOdometer = valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
-        val tripA = valueNear(listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"), { it in 0.0..9999999.9 })
-        val tripB = valueNear(listOf("TRIP B", "TRIP-B", "TRIPB", "トリップB", "トリップ Ｂ", "B TRIP"), { it in 0.0..9999999.9 })
+        fun formattedValueNear(
+            labelPattern: Regex,
+            valuePattern: Regex,
+            convert: (String) -> Double?
+        ): Double? {
+            for (i in lines.indices) {
+                if (labelPattern.containsMatchIn(lines[i])) {
+                    val candidate = (i..minOf(i + 2, lines.lastIndex))
+                        .asSequence()
+                        .mapNotNull { lineIndex -> valuePattern.find(lines[lineIndex])?.value }
+                        .mapNotNull(convert)
+                        .firstOrNull()
+                    if (candidate != null) return candidate
+                }
+            }
+            return null
+        }
+
+        // ODO: 6桁の整数表示（例: 012345）。先頭ゼロも桁数判定の段階では保持する。
+        val formattedOdometer = formattedValueNear(
+            Regex("""(?i)ODO|オド|総走行"""),
+            Regex("""(?<!\\d)\\d{6}(?!\\d)""")
+        ) { it.toDoubleOrNull() }
+        val labeledOdometer = formattedOdometer
+            ?: valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
+
+        // Trip A/B: A/Bラベルに続く4桁整数+小数1桁（例: A 0000.0）。
+        val tripAFormat = formattedValueNear(
+            Regex("""(?i)(?:^\\s*A(?:\\s|[:：])|\\bTRIP\\s*-?\\s*A\\b|\\bA\\s*TRIP\\b|トリップ\\s*A)"""),
+            Regex("""(?<!\\d)\\d{1,4}\\.\\d(?!\\d)""")
+        ) { it.toDoubleOrNull() }
+        val tripBFormat = formattedValueNear(
+            Regex("""(?i)(?:^\\s*B(?:\\s|[:：])|\\bTRIP\\s*-?\\s*B\\b|\\bB\\s*TRIP\\b|トリップ\\s*B)"""),
+            Regex("""(?<!\\d)\\d{1,4}\\.\\d(?!\\d)""")
+        ) { it.toDoubleOrNull() }
+        val tripA = tripAFormat ?: valueNear(
+            listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"),
+            { it in 0.0..9999999.9 }
+        )
+        val tripB = tripBFormat ?: valueNear(
+            listOf("TRIP B", "TRIP-B", "TRIPB", "トリップB", "トリップ Ｂ", "B TRIP"),
+            { it in 0.0..9999999.9 }
+        )
+
         // If A/B labels were found, do not mistake their long readings for the odometer.
-        val odoRaw = (labeledOdometer ?: if (tripA == null && tripB == null) parseOdometer(text) else null)
+        val odoRaw = (labeledOdometer ?: if (tripA == null && tripB == null) parseOdometer(normalizedText) else null)
             ?.toLong()?.toDouble()
-        val vehicleEconomy = valueNear(
+        // 車載燃費: 00.0 km/L。00.0も形式上有効なので0.0以上を許可する。
+        val vehicleEconomy = formattedValueNear(
+            Regex("""(?i)AVG|平均燃費|燃費|KM\\s*/\\s*L"""),
+            Regex("""(?<!\\d)\\d{2}\\.\\d(?!\\d)""")
+        ) { it.toDoubleOrNull() } ?: valueNear(
             listOf("AVG", "平均燃費", "燃費", "KM/L", "KM／L"),
-            { it in 1.0..99.9 }
+            { it in 0.0..99.9 }
         )
         val mergedOdometer = odoRaw?.let { mergeOdometerWithTripADecimal(it, tripA) }
         return DashboardResult(mergedOdometer, tripA, tripB, vehicleEconomy)
