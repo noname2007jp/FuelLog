@@ -215,8 +215,8 @@ fun EditRecordScreen(
         )
 
         LabeledField(
-            label = "オドメーター: 総走行距離 (km)",
-            badge = "メモとして保存",
+            label = "オドメーター：総走行距離 (km)",
+            badge = "メーターBから読取",
             value = odoText,
             onValueChange = { odoText = it },
             keyboardType = KeyboardType.Decimal,
@@ -224,8 +224,8 @@ fun EditRecordScreen(
         )
 
         LabeledField(
-            label = "トリップA: オドメーター補完用 (km)",
-            badge = "メーター自動判定",
+            label = "トリップA：前回満タンからの総走行距離 (km)",
+            badge = "燃費計算に使用",
             value = tripAText,
             onValueChange = { tripAText = it },
             keyboardType = KeyboardType.Decimal,
@@ -233,8 +233,8 @@ fun EditRecordScreen(
         )
 
         LabeledField(
-            label = "トリップB: 前回満タンからの走行距離 (km)",
-            badge = "燃費計算に使用",
+            label = "トリップB：オドメーター補完用 (km)",
+            badge = "ODO小数部の照合用",
             value = tripText,
             onValueChange = { tripText = it },
             keyboardType = KeyboardType.Decimal,
@@ -243,7 +243,7 @@ fun EditRecordScreen(
 
         LabeledField(
             label = "車載燃費 (km/L)",
-            badge = "メーター表示値",
+            badge = "メーターAから読取",
             value = vehicleEconomyText,
             onValueChange = { vehicleEconomyText = it },
             keyboardType = KeyboardType.Decimal,
@@ -251,7 +251,7 @@ fun EditRecordScreen(
         )
 
         Text(
-            "※ すべての項目は修正できます\n※ 燃費計算にはトリップBを優先し、未入力時はオドメーター差分を使用します\n※ トリップAはオドメーターの小数部補完に利用します",
+            "※ すべての項目は修正できます\n※ 燃費計算にはトリップAを優先し、未入力時はオドメーター差分を使用します\n※ トリップBはオドメーターの小数部補完に利用します",
             fontSize = 10.sp,
             color = Color(0xFF7A828F)
         )
@@ -409,12 +409,13 @@ private fun PhotoThumbnail(
     modifier: Modifier = Modifier,
     onRetake: () -> Unit
 ) {
+    var showPreview by remember { mutableStateOf(false) }
     Box(modifier = modifier.height(180.dp).clip(RoundedCornerShape(12.dp))) {
         AsyncImage(
             model = File(path),
-            contentDescription = label,
+            contentDescription = "$label（タップして拡大）",
             contentScale = ContentScale.Fit,
-            modifier = Modifier.fillMaxSize()
+            modifier = Modifier.fillMaxSize().clickable { showPreview = true }
         )
         Text(
             label,
@@ -438,6 +439,23 @@ private fun PhotoThumbnail(
                 .background(Color.Black.copy(alpha = 0.55f))
                 .clickable(onClick = onRetake)
                 .padding(horizontal = 8.dp, vertical = 3.dp)
+        )
+    }
+    if (showPreview) {
+        AlertDialog(
+            onDismissRequest = { showPreview = false },
+            title = { Text(label) },
+            text = {
+                AsyncImage(
+                    model = File(path),
+                    contentDescription = label,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(360.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showPreview = false }) { Text("閉じる") }
+            }
         )
     }
 }
