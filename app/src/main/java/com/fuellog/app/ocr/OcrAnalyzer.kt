@@ -95,20 +95,20 @@ object OcrAnalyzer {
         ) { it.toDoubleOrNull() }
         val labeledOdometer = formattedOdometer
             ?: valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
-            // OCRが「ODO」ラベルを落とした場合も、5～7桁の整数表示を候補にする。
-            ?: Regex("""(?<!\d)\d{5,7}(?![\d.])""")
+            // OCRが「ODO」ラベルを落とした場合も、仕様どおり6桁の整数表示だけを候補にする。
+            ?: Regex("""(?<!\d)\d{6}(?![\d.])""")
                 .findAll(normalizedText)
                 .mapNotNull { it.value.toDoubleOrNull() }
                 .maxOrNull()
 
         // Trip A/B: A/Bラベルに続く4桁整数+小数1桁（例: A 0000.0）。
         val tripAFormat = formattedValueNear(
-            Regex("""(?i)(?:^\s*A(?!\s*\d{2}\.\d\s*KM\s*/\s*L)(?:\s|[:：])|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
+            Regex("""(?i)(?:^\s*A(?!\s*\d{2}\.\d\s*KM\s*/\s*L)(?:\s|[:：]|$)|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
             Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() }
         val tripBValuePattern = Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         val tripBFormat = formattedValueNear(
-            Regex("""(?i)(?:^\s*B(?:\s|[:：])|\bTRIP\s*-?\s*B\b|\bB\s*TRIP\b|トリップ\s*B)"""),
+            Regex("""(?i)(?:^\s*B(?:\s|[:：]|$)|\bTRIP\s*-?\s*B\b|\bB\s*TRIP\b|トリップ\s*B)"""),
             tripBValuePattern
         ) { it.toDoubleOrNull() } ?: run {
             // OCRが「TRIP」と「B」を別行に分割したケースも扱う。
