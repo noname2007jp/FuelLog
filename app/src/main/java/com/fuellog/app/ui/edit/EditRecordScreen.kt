@@ -280,6 +280,29 @@ fun EditRecordScreen(
             )
         }
 
+        val litersForComparison = fuelText.replace(",", "").toDoubleOrNull()
+        val tripAForComparison = tripAText.replace(",", "").toDoubleOrNull()
+        val vehicleForComparison = vehicleEconomyText.replace(",", "").toDoubleOrNull()
+        val calculatedEconomy = if (litersForComparison != null && litersForComparison > 0 &&
+            tripAForComparison != null && tripAForComparison > 0) {
+            tripAForComparison / litersForComparison
+        } else null
+        if (calculatedEconomy != null && vehicleForComparison != null) {
+            val difference = vehicleForComparison - calculatedEconomy
+            Column(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFEAF4EB)).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("満タン法の計算燃費：${Formatters.fmt1(calculatedEconomy)} km/L", fontSize = 12.sp)
+                Text(
+                    "車載燃費 − 満タン法：${if (difference > 0) "+" else ""}${Formatters.fmt1(difference)} km/L",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
         if (meterAPhotoPath != null || meterBPhotoPath != null) {
             Text(
                 "写真をタップすると拡大できます。メーター写真は確認用の一時画像で、保存後に削除されます。",
