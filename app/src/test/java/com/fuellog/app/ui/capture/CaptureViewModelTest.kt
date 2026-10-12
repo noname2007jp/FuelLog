@@ -30,7 +30,9 @@ class CaptureViewModelTest {
             """ODO
 123456
 TRIP A
-123456.7""",
+123456.7
+TRIP B
+3456.4""",
             CaptureTarget.ODOMETER
         )
         viewModel.onDashboardRecognized(
@@ -41,9 +43,9 @@ AVG
 15.6 km/L""",
             CaptureTarget.TRIP
         )
-        assertEquals(123456.7, viewModel.odometerKm!!, 0.0001)
+        assertEquals(123456.4, viewModel.odometerKm!!, 0.0001)
         assertEquals(123456.7, viewModel.tripAKm!!, 0.0001)
-        assertEquals(321.4, viewModel.tripKm!!, 0.0001)
+        assertEquals(3456.4, viewModel.tripKm!!, 0.0001)
         assertEquals(15.6, viewModel.vehicleFuelEconomyKmPerLiter!!, 0.0001)
     }
 
