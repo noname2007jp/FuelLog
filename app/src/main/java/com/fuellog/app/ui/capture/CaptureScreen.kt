@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -83,6 +84,8 @@ fun CaptureScreen(
     val roiStore = remember { RoiStore(context.applicationContext) }
     var lastImageForRoi by remember { mutableStateOf<File?>(null) }
     var showRoiEditor by remember { mutableStateOf(false) }
+    // ROIは任意機能。既定では画像全体を従来のOCRへ渡す。
+    var useRoiForOcr by remember { mutableStateOf(false) }
 
     var target by remember { mutableStateOf(CaptureTarget.RECEIPT) }
     var hasCameraPermission by remember {
@@ -124,7 +127,7 @@ fun CaptureScreen(
                         val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
                         val totalRoi = roi(RoiTarget.TOTAL)
                         val dateRoi = roi(RoiTarget.DATE)
-                        val roiText = if (amountRoi != null && unitPriceRoi != null &&
+                        val roiText = if (useRoiForOcr && amountRoi != null && unitPriceRoi != null &&
                             totalRoi != null && dateRoi != null
                         ) {
                             val litersText = ocrEngine.recognizeRegion(normalizedFile, amountRoi, useJapanese = true)
@@ -132,7 +135,7 @@ fun CaptureScreen(
                             val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi, useJapanese = true)
                             val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi, useJapanese = true)
                             "給油量 $litersText\n単価 $unitText\n合計 $totalText\n日付 $dateText"
-                        } else if (wholeRoi != null && fullText.isBlank()) {
+                        } else if (useRoiForOcr && wholeRoi != null && fullText.isBlank()) {
                             ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
                         } else ""
                         // 既存の全体OCR結果に、項目別ROIの結果だけを補助情報として追加する。
@@ -142,11 +145,13 @@ fun CaptureScreen(
                     CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
                         // メーターA/Bは別々に撮影する。A写真ではODO・Trip A、B写真ではTrip B・車載燃費を採用する。
                         // 読み取り画像のパスは給油記録へ保存しない。
-                        val meterRoi = when (currentTarget) {
-                            CaptureTarget.ODOMETER -> roi(RoiTarget.METER_A_FRAME) ?: dashboardRoi
-                            CaptureTarget.TRIP -> roi(RoiTarget.METER_B_FRAME) ?: dashboardRoi
-                            CaptureTarget.RECEIPT -> null
-                        }
+                        val meterRoi = if (useRoiForOcr) {
+                            when (currentTarget) {
+                                CaptureTarget.ODOMETER -> roi(RoiTarget.METER_A_FRAME) ?: dashboardRoi
+                                CaptureTarget.TRIP -> roi(RoiTarget.METER_B_FRAME) ?: dashboardRoi
+                                CaptureTarget.RECEIPT -> null
+                            }
+                        } else null
                         val text = if (meterRoi != null) {
                             ocrEngine.recognizeRegion(normalizedFile, meterRoi, useJapanese = true)
                         } else {
@@ -354,12 +359,21 @@ fun CaptureScreen(
 
         Row(
             modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.Center
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
         ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("ROIを使う", color = Color(0xFFCFD6DD), fontSize = 11.sp)
+                Switch(
+                    checked = useRoiForOcr,
+                    onCheckedChange = { useRoiForOcr = it },
+                    enabled = !viewModel.isProcessing
+                )
+            }
             TextButton(
                 enabled = lastImageForRoi != null && !viewModel.isProcessing,
                 onClick = { showRoiEditor = true }
-            ) { Text("ROI設定（読み取り範囲）") }
+            ) { Text("ROI設定") }
         }
 
         if (showRoiEditor && lastImageForRoi != null) {
