@@ -152,12 +152,22 @@ fun CaptureScreen(
                                 CaptureTarget.RECEIPT -> null
                             }
                         } else null
-                        val text = if (meterRoi != null) {
-                            ocrEngine.recognizeMeterRegion(normalizedFile, meterRoi)
+                        val text: String
+                        val fallbackText: String?
+                        if (meterRoi != null) {
+                            text = ocrEngine.recognizeMeterRegion(normalizedFile, meterRoi)
+                            // ROIで必要な項目を読めなかった場合に備え、画像全体のOCRも保険として実行する。
+                            fallbackText = ocrEngine.recognizeMeter(uri)
                         } else {
-                            ocrEngine.recognizeMeter(uri)
+                            text = ocrEngine.recognizeMeter(uri)
+                            fallbackText = null
                         }
-                        viewModel.onDashboardRecognized(normalizedFile.absolutePath, text, currentTarget)
+                        viewModel.onDashboardRecognized(
+                            normalizedFile.absolutePath,
+                            text,
+                            currentTarget,
+                            fallbackText
+                        )
                     }
                 }
             } catch (e: Exception) {
