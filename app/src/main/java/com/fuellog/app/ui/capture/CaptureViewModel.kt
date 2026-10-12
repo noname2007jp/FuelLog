@@ -10,8 +10,8 @@ import java.time.LocalDate
 
 enum class CaptureTarget(val label: String, val guide: String) {
     RECEIPT("🧾 レシート", "レシート全体を枠に合わせてください"),
-    ODOMETER("🚗 メーターA", "ODOとトリップAの表示を含めて撮影してください"),
-    TRIP("🔁 メーターB", "トリップBと車載燃費の表示を含めて撮影してください")
+    ODOMETER("🚗 メーターA", "トリップAと車載燃費の表示を含めて撮影してください"),
+    TRIP("🔁 メーターB", "ODO（先頭ゼロを含む6桁）とトリップBの表示を含めて撮影してください")
 }
 
 class CaptureViewModel : ViewModel() {
