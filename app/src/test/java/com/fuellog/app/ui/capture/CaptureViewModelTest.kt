@@ -52,6 +52,23 @@ TRIP B
     }
 
     @Test
+    fun meterBOcrFallsBackToFullImageWhenRoiDoesNotContainReadableValues() {
+        val viewModel = CaptureViewModel()
+        viewModel.onDashboardRecognized(
+            "/tmp/dashboard-b.jpg",
+            "unreadable ROI",
+            CaptureTarget.TRIP,
+            """ODO
+012345
+TRIP B
+2345.6 km"""
+        )
+
+        assertEquals(12345.6, viewModel.odometerKm!!, 0.0001)
+        assertEquals(2345.6, viewModel.tripKm!!, 0.0001)
+    }
+
+    @Test
     fun failedMeterOcrDoesNotKeepPreviousReading() {
         val viewModel = CaptureViewModel()
 
