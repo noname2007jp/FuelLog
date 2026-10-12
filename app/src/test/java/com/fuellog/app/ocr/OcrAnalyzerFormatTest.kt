@@ -13,14 +13,14 @@ class OcrAnalyzerFormatTest {
             ODO
             012345
             A 0000.0 km
-            B 0123.4 km
-            AVG 00.0 km/L
+            B 2345.4 km
+            A 00.0 km/L
             """.trimIndent()
         )
 
-        assertEquals(12345.0, result.odometerKm!!, 0.0001)
+        assertEquals(12345.4, result.odometerKm!!, 0.0001)
         assertEquals(0.0, result.tripAKm!!, 0.0001)
-        assertEquals(123.4, result.tripBKm!!, 0.0001)
+        assertEquals(2345.4, result.tripBKm!!, 0.0001)
         assertEquals(0.0, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
     }
 
@@ -39,6 +39,24 @@ class OcrAnalyzerFormatTest {
         assertEquals(12.3, result.tripAKm!!, 0.0001)
         assertEquals(45.6, result.tripBKm!!, 0.0001)
         assertEquals(12.3, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+    }
+
+    @Test
+    fun toleratesOneOcrDigitMismatchWhenMergingTripBDecimal() {
+        assertEquals(
+            12345.6,
+            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, 2348.6),
+            0.0001
+        )
+    }
+
+    @Test
+    fun doesNotMergeTripBDecimalWhenLastFourDigitsDifferTooMuch() {
+        assertEquals(
+            12345.0,
+            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, 9876.4),
+            0.0001
+        )
     }
 
     @Test
