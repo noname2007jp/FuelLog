@@ -67,7 +67,7 @@ class CaptureViewModel : ViewModel() {
     }
 
     /**
-     * メーターA写真からODOとTrip Aだけを採用する。
+     * メーターAはTrip Aと車載燃費、メーターBはODOとTrip Bを採用する。
      * 写真自体は給油記録に紐付けず、読み取り結果だけを保持する。
      */
     fun onDashboardRecognized(path: String, text: String, target: CaptureTarget) {
@@ -75,26 +75,25 @@ class CaptureViewModel : ViewModel() {
         when (target) {
             CaptureTarget.ODOMETER -> {
                 meterAPhotoPath = path
-                odometerKm = result.odometerKm
                 tripAKm = result.tripAKm
-                val count = listOf(odometerKm, tripAKm).count { it != null }
+                vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
+                val count = listOf(tripAKm, vehicleFuelEconomyKmPerLiter).count { it != null }
                 infoMessage = if (count > 0) {
-                    "メーターAを読み取りました（ODO・トリップA：${count}項目）。必要に応じて確認・修正してください"
+                    "メーターAを読み取りました（トリップA・車載燃費：${count}項目）。必要に応じて確認・修正してください"
                 } else {
-                    "ODO・トリップAを判定できませんでした。確認画面で手入力してください"
+                    "トリップA・車載燃費を判定できませんでした。ROI範囲と画像を確認するか、確認画面で手入力してください"
                 }
             }
             CaptureTarget.TRIP -> {
                 meterBPhotoPath = path
-                tripKm = result.tripBKm ?: if (result.tripAKm == null && result.tripBKm == null) {
-                    OcrAnalyzer.parseTrip(text)
-                } else null
-                vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
-                val count = listOf(tripKm, vehicleFuelEconomyKmPerLiter).count { it != null }
+                // BラベルがOCRで欠落しても、メーターB画像内の小数付き距離を候補にする。
+                tripKm = result.tripBKm ?: OcrAnalyzer.parseTrip(text)
+                odometerKm = result.odometerKm
+                val count = listOf(odometerKm, tripKm).count { it != null }
                 infoMessage = if (count > 0) {
-                    "メーターBを読み取りました（トリップB・車載燃費：${count}項目）。必要に応じて確認・修正してください"
+                    "メーターBを読み取りました（ODO・トリップB：${count}項目）。必要に応じて確認・修正してください"
                 } else {
-                    "トリップB・車載燃費を判定できませんでした。確認画面で手入力してください"
+                    "ODO・トリップBを判定できませんでした。ROI範囲と画像を確認するか、確認画面で手入力してください"
                 }
             }
             CaptureTarget.RECEIPT -> Unit
