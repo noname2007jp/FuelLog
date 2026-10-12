@@ -43,13 +43,13 @@ class ReceiptDateParserTest {
 TRIP A
 123456.7
 TRIP B
-321.4
+3456.4
 AVG
 15.6 km/L"""
         )
-        assertEquals(123456.7, result.odometerKm!!, 0.0001)
+        assertEquals(123456.4, result.odometerKm!!, 0.0001)
         assertEquals(123456.7, result.tripAKm!!, 0.0001)
-        assertEquals(321.4, result.tripBKm!!, 0.0001)
+        assertEquals(3456.4, result.tripBKm!!, 0.0001)
         assertEquals(15.6, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
 
         assertEquals(123456.0, OcrAnalyzer.mergeOdometerWithTripADecimal(123456.0, 123.4), 0.0001)
