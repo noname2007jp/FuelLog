@@ -277,8 +277,8 @@ fun RoiEditorDialog(
 
 private fun defaultRois() = listOf(
     NormalizedRoi(RoiTarget.RECEIPT_FRAME, .05f, .03f, .95f, .97f),
-    NormalizedRoi(RoiTarget.METER_A_FRAME, .05f, .25f, .95f, .75f),
-    NormalizedRoi(RoiTarget.METER_B_FRAME, .05f, .25f, .95f, .75f),
+    NormalizedRoi(RoiTarget.METER_A_FRAME, .02f, .02f, .98f, .98f),
+    NormalizedRoi(RoiTarget.METER_B_FRAME, .02f, .02f, .98f, .98f),
     NormalizedRoi(RoiTarget.FUEL_AMOUNT, .40f, .30f, .90f, .42f),
     NormalizedRoi(RoiTarget.UNIT_PRICE, .40f, .42f, .90f, .54f),
     NormalizedRoi(RoiTarget.TOTAL, .40f, .54f, .90f, .66f),
@@ -292,8 +292,8 @@ private fun defaultRoi(target: RoiTarget) = when (target) {
     RoiTarget.TRIP_DECIMAL -> NormalizedRoi(target, .70f, .48f, .88f, .65f)
     RoiTarget.DASHBOARD -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
     RoiTarget.RECEIPT_FRAME -> NormalizedRoi(target, .05f, .03f, .95f, .97f)
-    RoiTarget.METER_A_FRAME -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
-    RoiTarget.METER_B_FRAME -> NormalizedRoi(target, .05f, .25f, .95f, .75f)
+    RoiTarget.METER_A_FRAME -> NormalizedRoi(target, .02f, .02f, .98f, .98f)
+    RoiTarget.METER_B_FRAME -> NormalizedRoi(target, .02f, .02f, .98f, .98f)
     RoiTarget.FUEL_AMOUNT -> NormalizedRoi(target, .40f, .30f, .90f, .42f)
     RoiTarget.UNIT_PRICE -> NormalizedRoi(target, .40f, .42f, .90f, .54f)
     RoiTarget.TOTAL -> NormalizedRoi(target, .40f, .54f, .90f, .66f)
