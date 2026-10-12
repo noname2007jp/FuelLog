@@ -229,6 +229,14 @@ fun EditRecordScreen(
                 keyboardType = KeyboardType.Decimal,
                 placeholder = "012345"
             )
+            LabeledField(
+                label = "トリップB：オドメーター補完用 (km)",
+                badge = "ODO小数部の照合用",
+                value = tripText,
+                onValueChange = { tripText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "2345.6"
+            )
         }
 
         if (meterAPhotoPath != null) {
