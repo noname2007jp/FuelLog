@@ -23,30 +23,30 @@ class CaptureViewModelTest {
     }
 
     @Test
-    fun dashboardOcrSetsOdometerTripAAndTripBSeparately() {
+    fun meterAReadsTripAAndVehicleEconomyWhileMeterBReadsOdometerAndTripB() {
         val viewModel = CaptureViewModel()
         viewModel.onDashboardRecognized(
             "/tmp/dashboard-a.jpg",
-            """ODO
-123456
-TRIP A
-123456.7
-TRIP B
-3456.4""",
+            """TRIP A
+512.3 km
+A 15.6 km/L""",
             CaptureTarget.ODOMETER
         )
+        assertEquals(512.3, viewModel.tripAKm!!, 0.0001)
+        assertEquals(15.6, viewModel.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+        assertNull(viewModel.odometerKm)
+        assertNull(viewModel.tripKm)
+
         viewModel.onDashboardRecognized(
             "/tmp/dashboard-b.jpg",
-            """TRIP B
-3456.4
-AVG
-15.6 km/L""",
+            """ODO
+012345
+TRIP B
+2345.6 km""",
             CaptureTarget.TRIP
         )
-        assertEquals(123456.4, viewModel.odometerKm!!, 0.0001)
-        assertEquals(123456.7, viewModel.tripAKm!!, 0.0001)
-        assertEquals(3456.4, viewModel.tripKm!!, 0.0001)
-        assertEquals(15.6, viewModel.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+        assertEquals(12345.6, viewModel.odometerKm!!, 0.0001)
+        assertEquals(2345.6, viewModel.tripKm!!, 0.0001)
         assertEquals("/tmp/dashboard-a.jpg", viewModel.meterAPhotoPath)
         assertEquals("/tmp/dashboard-b.jpg", viewModel.meterBPhotoPath)
     }
