@@ -47,6 +47,8 @@ AVG
         assertEquals(123456.7, viewModel.tripAKm!!, 0.0001)
         assertEquals(3456.4, viewModel.tripKm!!, 0.0001)
         assertEquals(15.6, viewModel.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+        assertEquals("/tmp/dashboard-a.jpg", viewModel.meterAPhotoPath)
+        assertEquals("/tmp/dashboard-b.jpg", viewModel.meterBPhotoPath)
     }
 
     @Test
