@@ -91,19 +91,19 @@ object OcrAnalyzer {
         // ODO: 6桁の整数表示（例: 012345）。先頭ゼロも桁数判定の段階では保持する。
         val formattedOdometer = formattedValueNear(
             Regex("""(?i)ODO|オド|総走行"""),
-            Regex("""(?<!\\d)\\d{6}(?!\\d)""")
+            Regex("""(?<!\d)\d{6}(?!\d)""")
         ) { it.toDoubleOrNull() }
         val labeledOdometer = formattedOdometer
             ?: valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
 
         // Trip A/B: A/Bラベルに続く4桁整数+小数1桁（例: A 0000.0）。
         val tripAFormat = formattedValueNear(
-            Regex("""(?i)(?:^\\s*A(?:\\s|[:：])|\\bTRIP\\s*-?\\s*A\\b|\\bA\\s*TRIP\\b|トリップ\\s*A)"""),
-            Regex("""(?<!\\d)\\d{1,4}\\.\\d(?!\\d)""")
+            Regex("""(?i)(?:^\s*A(?:\s|[:：])|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
+            Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() }
         val tripBFormat = formattedValueNear(
-            Regex("""(?i)(?:^\\s*B(?:\\s|[:：])|\\bTRIP\\s*-?\\s*B\\b|\\bB\\s*TRIP\\b|トリップ\\s*B)"""),
-            Regex("""(?<!\\d)\\d{1,4}\\.\\d(?!\\d)""")
+            Regex("""(?i)(?:^\s*B(?:\s|[:：])|\bTRIP\s*-?\s*B\b|\bB\s*TRIP\b|トリップ\s*B)"""),
+            Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() }
         val tripA = tripAFormat ?: valueNear(
             listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"),
@@ -119,8 +119,8 @@ object OcrAnalyzer {
             ?.toLong()?.toDouble()
         // 車載燃費: 00.0 km/L。00.0も形式上有効なので0.0以上を許可する。
         val vehicleEconomy = formattedValueNear(
-            Regex("""(?i)AVG|平均燃費|燃費|KM\\s*/\\s*L"""),
-            Regex("""(?<!\\d)\\d{2}\\.\\d(?!\\d)""")
+            Regex("""(?i)AVG|平均燃費|燃費|KM\s*/\s*L"""),
+            Regex("""(?<!\d)\d{2}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() } ?: valueNear(
             listOf("AVG", "平均燃費", "燃費", "KM/L", "KM／L"),
             { it in 0.0..99.9 }
