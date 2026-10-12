@@ -94,8 +94,7 @@ object OcrAnalyzer {
             Regex("""(?<!\d)\d{6}(?!\d)""")
         ) { it.toDoubleOrNull() }
         val labeledOdometer = formattedOdometer
-            ?: valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
-            // OCRが「ODO」ラベルを落とした場合も、仕様どおり6桁の整数表示だけを候補にする。
+            // ODOラベルの近くにTrip Bの数値がある場合、そちらを誤採用しないよう6桁整数だけに限定する。
             ?: Regex("""(?<!\d)\d{6}(?![\d.])""")
                 .findAll(normalizedText)
                 .mapNotNull { it.value.toDoubleOrNull() }
