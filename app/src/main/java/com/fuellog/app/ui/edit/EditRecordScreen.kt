@@ -113,7 +113,10 @@ fun EditRecordScreen(
     }
 
     val receiptPath = existing?.receiptPhotoPath ?: captureViewModel.receiptPhotoPath
-    val meterPath = existing?.meterPhotoPath ?: captureViewModel.meterPhotoPath
+    // 旧記録に保存済みの画像だけを表示。新しいメーター写真は一時表示のみ。
+    val meterPath = existing?.meterPhotoPath
+    val meterAPhotoPath = captureViewModel.meterAPhotoPath
+    val meterBPhotoPath = captureViewModel.meterBPhotoPath
 
     Column(
         modifier = Modifier
@@ -142,6 +145,21 @@ fun EditRecordScreen(
                     PhotoThumbnail(path, "🚗 メーター", Modifier.weight(1f), onRetake)
                 }
             }
+        }
+        if (meterAPhotoPath != null || meterBPhotoPath != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                meterAPhotoPath?.let { path ->
+                    PhotoThumbnail(path, "🚗 メーターA", Modifier.weight(1f), onRetake)
+                }
+                meterBPhotoPath?.let { path ->
+                    PhotoThumbnail(path, "🔁 メーターB", Modifier.weight(1f), onRetake)
+                }
+            }
+            Text(
+                "メーター写真は確認用の一時画像です。保存後に削除されます。",
+                fontSize = 10.sp,
+                color = Color(0xFF7A828F)
+            )
         }
 
         LabeledField(
