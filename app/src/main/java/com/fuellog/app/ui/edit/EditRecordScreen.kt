@@ -146,22 +146,6 @@ fun EditRecordScreen(
                 }
             }
         }
-        if (meterAPhotoPath != null || meterBPhotoPath != null) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                meterAPhotoPath?.let { path ->
-                    PhotoThumbnail(path, "🚗 メーターA", Modifier.fillMaxWidth(), onRetake)
-                }
-                meterBPhotoPath?.let { path ->
-                    PhotoThumbnail(path, "🔁 メーターB", Modifier.fillMaxWidth(), onRetake)
-                }
-            }
-            Text(
-                "メーター写真は確認用の一時画像です。保存後に削除されます。",
-                fontSize = 10.sp,
-                color = Color(0xFF7A828F)
-            )
-        }
-
         LabeledField(
             label = "給油日",
             badge = captureViewModel.dateOrigin.label,
@@ -214,41 +198,87 @@ fun EditRecordScreen(
             placeholder = "170.0"
         )
 
-        LabeledField(
-            label = "オドメーター：総走行距離 (km)",
-            badge = "メーターBから読取",
-            value = odoText,
-            onValueChange = { odoText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "48532"
-        )
+        if (meterBPhotoPath != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                PhotoThumbnail(meterBPhotoPath!!, "🔁 メーターB", Modifier.weight(0.85f), onRetake)
+                Column(modifier = Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LabeledField(
+                        label = "オドメーター：総走行距離 (km)",
+                        badge = "メーターB",
+                        value = odoText,
+                        onValueChange = { odoText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "012345"
+                    )
+                    LabeledField(
+                        label = "トリップB：オドメーター補完用 (km)",
+                        badge = "ODO小数部の照合用",
+                        value = tripText,
+                        onValueChange = { tripText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "2345.6"
+                    )
+                }
+            }
+        } else {
+            LabeledField(
+                label = "オドメーター：総走行距離 (km)",
+                badge = "メーターBから読取",
+                value = odoText,
+                onValueChange = { odoText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "012345"
+            )
+        }
 
-        LabeledField(
-            label = "トリップA：前回満タンからの総走行距離 (km)",
-            badge = "燃費計算に使用",
-            value = tripAText,
-            onValueChange = { tripAText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "123456.7"
-        )
+        if (meterAPhotoPath != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                PhotoThumbnail(meterAPhotoPath!!, "🚗 メーターA", Modifier.weight(0.85f), onRetake)
+                Column(modifier = Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LabeledField(
+                        label = "トリップA：前回満タンからの総走行距離 (km)",
+                        badge = "燃費計算に使用",
+                        value = tripAText,
+                        onValueChange = { tripAText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "512.3"
+                    )
+                    LabeledField(
+                        label = "車載燃費 (km/L)",
+                        badge = "メーターAから読取",
+                        value = vehicleEconomyText,
+                        onValueChange = { vehicleEconomyText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "15.6"
+                    )
+                }
+            }
+        } else {
+            LabeledField(
+                label = "トリップA：前回満タンからの総走行距離 (km)",
+                badge = "燃費計算に使用",
+                value = tripAText,
+                onValueChange = { tripAText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "512.3"
+            )
+            LabeledField(
+                label = "車載燃費 (km/L)",
+                badge = "メーターAから読取",
+                value = vehicleEconomyText,
+                onValueChange = { vehicleEconomyText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "15.6"
+            )
+        }
 
-        LabeledField(
-            label = "トリップB：オドメーター補完用 (km)",
-            badge = "ODO小数部の照合用",
-            value = tripText,
-            onValueChange = { tripText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "512.3"
-        )
-
-        LabeledField(
-            label = "車載燃費 (km/L)",
-            badge = "メーターAから読取",
-            value = vehicleEconomyText,
-            onValueChange = { vehicleEconomyText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "15.6"
-        )
+        if (meterAPhotoPath != null || meterBPhotoPath != null) {
+            Text(
+                "写真をタップすると拡大できます。メーター写真は確認用の一時画像で、保存後に削除されます。",
+                fontSize = 10.sp,
+                color = Color(0xFF7A828F)
+            )
+        }
 
         Text(
             "※ すべての項目は修正できます\n※ 燃費計算にはトリップAを優先し、未入力時はオドメーター差分を使用します\n※ トリップBはオドメーターの小数部補完に利用します",
