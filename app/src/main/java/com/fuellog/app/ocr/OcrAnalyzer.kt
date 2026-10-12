@@ -95,16 +95,37 @@ object OcrAnalyzer {
         ) { it.toDoubleOrNull() }
         val labeledOdometer = formattedOdometer
             ?: valueNear(listOf("ODO", "オド", "総走行"), { it >= 1000.0 })
+            // OCRが「ODO」ラベルを落とした場合も、5～7桁の整数表示を候補にする。
+            ?: Regex("""(?<!\d)\d{5,7}(?![\d.])""")
+                .findAll(normalizedText)
+                .mapNotNull { it.value.toDoubleOrNull() }
+                .maxOrNull()
 
         // Trip A/B: A/Bラベルに続く4桁整数+小数1桁（例: A 0000.0）。
         val tripAFormat = formattedValueNear(
             Regex("""(?i)(?:^\s*A(?!\s*\d{2}\.\d\s*KM\s*/\s*L)(?:\s|[:：])|\bTRIP\s*-?\s*A\b|\bA\s*TRIP\b|トリップ\s*A)"""),
             Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         ) { it.toDoubleOrNull() }
+        val tripBValuePattern = Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
         val tripBFormat = formattedValueNear(
             Regex("""(?i)(?:^\s*B(?:\s|[:：])|\bTRIP\s*-?\s*B\b|\bB\s*TRIP\b|トリップ\s*B)"""),
-            Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
-        ) { it.toDoubleOrNull() }
+            tripBValuePattern
+        ) { it.toDoubleOrNull() } ?: run {
+            // OCRが「TRIP」と「B」を別行に分割したケースも扱う。
+            var splitLabelValue: Double? = null
+            for (i in lines.indices) {
+                if (!Regex("""(?i)^\s*TRIP\s*$""").containsMatchIn(lines[i])) continue
+                val bIndex = (i + 1..minOf(i + 2, lines.lastIndex)).firstOrNull { index ->
+                    Regex("""(?i)^\s*B\s*[:：]?\s*$""").containsMatchIn(lines[index])
+                } ?: continue
+                splitLabelValue = (bIndex..minOf(bIndex + 2, lines.lastIndex))
+                    .asSequence()
+                    .mapNotNull { index -> tripBValuePattern.find(lines[index])?.value?.toDoubleOrNull() }
+                    .firstOrNull()
+                if (splitLabelValue != null) break
+            }
+            splitLabelValue
+        }
         val tripA = tripAFormat ?: valueNear(
             listOf("TRIP A", "TRIP-A", "TRIPA", "トリップA", "トリップ Ａ", "A TRIP"),
             { it in 0.0..9999999.9 }
