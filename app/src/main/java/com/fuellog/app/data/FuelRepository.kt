@@ -11,6 +11,7 @@ class FuelRepository(private val dao: FuelRecordDao) {
 
     suspend fun findById(id: Long): FuelRecord? = dao.findById(id)
     suspend fun insert(record: FuelRecord): Long = dao.insert(record)
+    suspend fun insertAll(records: List<FuelRecord>): List<Long> = dao.insertAll(records)
     suspend fun update(record: FuelRecord) = dao.update(record)
     suspend fun delete(record: FuelRecord) = dao.delete(record)
     suspend fun deleteAll() = dao.deleteAll()
@@ -18,8 +19,8 @@ class FuelRepository(private val dao: FuelRecordDao) {
     companion object {
         /**
          * 走行距離の決定ルール:
-         *  1. トリップメーター値があればそれを優先
-         *  2. なければ前回レコードとのオドメーター差分
+         *  1. トリップA（前回満タンからの走行距離）があればそれを優先
+         *  2. なければ前回レコードとのオドメーター差分。トリップBはODO補完用で、燃費距離には使わない
          * 燃費 = 走行距離 / 給油量
          */
         fun calculate(recordsAsc: List<FuelRecord>): List<FuelEntry> {
@@ -27,7 +28,7 @@ class FuelRepository(private val dao: FuelRecordDao) {
             var prevOdometer: Double? = null
             for (r in recordsAsc) {
                 val distance = when {
-                    r.tripKm != null && r.tripKm > 0 -> r.tripKm
+                    r.tripAKm != null && r.tripAKm > 0 -> r.tripAKm
                     r.odometerKm != null && prevOdometer != null && r.odometerKm > prevOdometer ->
                         r.odometerKm - prevOdometer
                     else -> null

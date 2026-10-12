@@ -173,6 +173,16 @@ private fun RecentRecordCard(entry: FuelEntry, onClick: () -> Unit) {
                     fontSize = 11.sp,
                     color = Color(0xFF7A828F)
                 )
+                val vehicleEconomy = entry.record.vehicleFuelEconomyKmPerLiter
+                val calculatedEconomy = entry.economyKmPerLiter
+                if (vehicleEconomy != null && calculatedEconomy != null) {
+                    val difference = vehicleEconomy - calculatedEconomy
+                    Text(
+                        text = "車載燃費との差（車載−満タン法）：${if (difference > 0) "+" else ""}${Formatters.fmt1(difference)} km/L",
+                        fontSize = 10.sp,
+                        color = Color(0xFF52665A)
+                    )
+                }
             }
             Column(horizontalAlignment = Alignment.End) {
                 Text(

@@ -19,6 +19,9 @@ interface FuelRecordDao {
     @Insert
     suspend fun insert(record: FuelRecord): Long
 
+    @Insert
+    suspend fun insertAll(records: List<FuelRecord>): List<Long>
+
     @Update
     suspend fun update(record: FuelRecord)
 

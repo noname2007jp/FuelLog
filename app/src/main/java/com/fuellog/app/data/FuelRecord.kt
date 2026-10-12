@@ -16,8 +16,12 @@ data class FuelRecord(
     val unitPrice: Double? = null,
     /** オドメーター: 総走行距離 (km) — メモとして全期間保持 */
     val odometerKm: Double? = null,
-    /** トリップメーター: 区間距離 (km) */
+    /** トリップメーターA: 前回満タンからの走行距離 (km)。燃費計算に使用 */
+    val tripAKm: Double? = null,
+    /** トリップメーターB: オドメーターの小数部補完用 (km) */
     val tripKm: Double? = null,
+    /** 車載メーターが表示した燃費 (km/L) */
+    val vehicleFuelEconomyKmPerLiter: Double? = null,
     /** 撮影したレシート写真のパス */
     val receiptPhotoPath: String? = null,
     /** 撮影したメーター写真のパス */

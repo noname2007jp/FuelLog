@@ -38,6 +38,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Switch
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -62,6 +63,8 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import com.fuellog.app.FuelLogApp
 import com.fuellog.app.ocr.OcrEngine
+import com.fuellog.app.ocr.RoiStore
+import com.fuellog.app.ocr.RoiTarget
 import com.fuellog.app.util.Formatters
 import com.fuellog.app.util.ImageUtils
 import kotlinx.coroutines.launch
@@ -78,6 +81,11 @@ fun CaptureScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val scope = rememberCoroutineScope()
     val ocrEngine = remember { OcrEngine(context.applicationContext) }
+    val roiStore = remember { RoiStore(context.applicationContext) }
+    var lastImageForRoi by remember { mutableStateOf<File?>(null) }
+    var showRoiEditor by remember { mutableStateOf(false) }
+    // ROIは任意機能。既定では画像全体を従来のOCRへ渡す。
+    var useRoiForOcr by remember { mutableStateOf(false) }
 
     var target by remember { mutableStateOf(CaptureTarget.RECEIPT) }
     var hasCameraPermission by remember {
@@ -102,14 +110,65 @@ fun CaptureScreen(
         scope.launch {
             viewModel.updateProcessing(true)
             try {
-                val uri = Uri.fromFile(file)
+                val exifDate = ImageUtils.readExifDate(file)
+                val normalizedFile = ImageUtils.normalizeForDisplayAndOcr(file, app.photoDir) ?: file
+                lastImageForRoi = normalizedFile
+                val uri = Uri.fromFile(normalizedFile)
+                val savedRois = roiStore.load()
+                fun roi(target: RoiTarget) = savedRois.firstOrNull { it.target == target }
+                val wholeRoi = roi(RoiTarget.WHOLE)
+                val dashboardRoi = roi(RoiTarget.DASHBOARD) ?: wholeRoi
                 when (currentTarget) {
-                    CaptureTarget.RECEIPT ->
-                        viewModel.onReceiptRecognized(file.absolutePath, ocrEngine.recognizeReceipt(uri))
-                    CaptureTarget.ODOMETER ->
-                        viewModel.onOdometerRecognized(file.absolutePath, ocrEngine.recognizeMeter(uri))
-                    CaptureTarget.TRIP ->
-                        viewModel.onTripRecognized(file.absolutePath, ocrEngine.recognizeMeter(uri))
+                    CaptureTarget.RECEIPT -> {
+                        viewModel.applyExifDate(exifDate)
+                        // 従来のレシート全体OCRを維持する。レシート全体ROIの重複OCRは解析結果を混乱させるため行わない。
+                        val fullText = ocrEngine.recognizeReceipt(uri)
+                        val amountRoi = roi(RoiTarget.FUEL_AMOUNT)
+                        val unitPriceRoi = roi(RoiTarget.UNIT_PRICE)
+                        val totalRoi = roi(RoiTarget.TOTAL)
+                        val dateRoi = roi(RoiTarget.DATE)
+                        val roiText = if (useRoiForOcr && amountRoi != null && unitPriceRoi != null &&
+                            totalRoi != null && dateRoi != null
+                        ) {
+                            val litersText = ocrEngine.recognizeRegion(normalizedFile, amountRoi, useJapanese = true)
+                            val unitText = ocrEngine.recognizeRegion(normalizedFile, unitPriceRoi, useJapanese = true)
+                            val totalText = ocrEngine.recognizeRegion(normalizedFile, totalRoi, useJapanese = true)
+                            val dateText = ocrEngine.recognizeRegion(normalizedFile, dateRoi, useJapanese = true)
+                            "給油量 $litersText\n単価 $unitText\n合計 $totalText\n日付 $dateText"
+                        } else if (useRoiForOcr && wholeRoi != null && fullText.isBlank()) {
+                            ocrEngine.recognizeRegion(normalizedFile, wholeRoi, useJapanese = true)
+                        } else ""
+                        // 既存の全体OCR結果に、項目別ROIの結果だけを補助情報として追加する。
+                        val text = listOf(fullText, roiText).filter { it.isNotBlank() }.joinToString("\n")
+                        viewModel.onReceiptRecognized(normalizedFile.absolutePath, text)
+                    }
+                    CaptureTarget.ODOMETER, CaptureTarget.TRIP -> {
+                        // メーターA/Bは別々に撮影する。A写真ではTrip A・車載燃費、B写真ではODO・Trip Bを採用する。
+                        // 読み取り画像のパスは給油記録へ保存しない。
+                        val meterRoi = if (useRoiForOcr) {
+                            when (currentTarget) {
+                                CaptureTarget.ODOMETER -> roi(RoiTarget.METER_A_FRAME) ?: dashboardRoi
+                                CaptureTarget.TRIP -> roi(RoiTarget.METER_B_FRAME) ?: dashboardRoi
+                                CaptureTarget.RECEIPT -> null
+                            }
+                        } else null
+                        val text: String
+                        val fallbackText: String?
+                        if (meterRoi != null) {
+                            text = ocrEngine.recognizeMeterRegion(normalizedFile, meterRoi)
+                            // ROIで必要な項目を読めなかった場合に備え、画像全体のOCRも保険として実行する。
+                            fallbackText = ocrEngine.recognizeMeter(uri)
+                        } else {
+                            text = ocrEngine.recognizeMeter(uri)
+                            fallbackText = null
+                        }
+                        viewModel.onDashboardRecognized(
+                            normalizedFile.absolutePath,
+                            text,
+                            currentTarget,
+                            fallbackText
+                        )
+                    }
                 }
             } catch (e: Exception) {
                 viewModel.setError("読み取りに失敗しました。もう一度お試しください。")
@@ -308,6 +367,38 @@ fun CaptureScreen(
             }
         }
 
+        Row(
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("ROIを使う", color = Color(0xFFCFD6DD), fontSize = 11.sp)
+                Switch(
+                    checked = useRoiForOcr,
+                    onCheckedChange = { useRoiForOcr = it },
+                    enabled = !viewModel.isProcessing
+                )
+            }
+            TextButton(
+                enabled = lastImageForRoi != null && !viewModel.isProcessing,
+                onClick = { showRoiEditor = true }
+            ) { Text("ROI設定") }
+        }
+
+        if (showRoiEditor && lastImageForRoi != null) {
+            RoiEditorDialog(
+                imageFile = lastImageForRoi!!,
+                roiStore = roiStore,
+                onDismiss = { showRoiEditor = false },
+                onSaved = {
+                    showRoiEditor = false
+                    viewModel.setError(null)
+                    viewModel.setInfo("ROI設定を保存しました。次回の読み取りから適用します")
+                }
+            )
+        }
+
         Text(
             text = buildStatusText(viewModel),
             color = Color(0xFFCFD6DD),
@@ -345,14 +436,19 @@ fun CaptureScreen(
 private fun buildStatusText(viewModel: CaptureViewModel): String = buildString {
     append("レシート: ")
     append(
-        viewModel.fuelLiters?.let { "${Formatters.fmt1(it)}L" }
+        viewModel.fuelLiters?.let { "${Formatters.fmt2(it)}L" }
             ?: if (viewModel.receiptPhotoPath != null) "撮影済" else "未撮影"
     )
     viewModel.costYen?.let { append(" / ¥${Formatters.money(it)}") }
-    append("    オド: ")
-    append(viewModel.odometerKm?.let { "${Formatters.fmt0(it)}km" } ?: "—")
-    append("    トリップ: ")
+    append("    ODO: ")
+    append(viewModel.odometerKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
+    append("    Trip A: ")
+    append(viewModel.tripAKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
+    append("    Trip B: ")
     append(viewModel.tripKm?.let { "${Formatters.fmt1(it)}km" } ?: "—")
+    viewModel.vehicleFuelEconomyKmPerLiter?.let {
+        append("    車載燃費: ${Formatters.fmt1(it)}km/L")
+    }
 }
 
 private fun takePhoto(

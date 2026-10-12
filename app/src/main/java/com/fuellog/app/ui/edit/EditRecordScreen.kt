@@ -18,6 +18,10 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.DatePicker
+import androidx.compose.material3.DatePickerDialog
+import androidx.compose.material3.rememberDatePickerState
 import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -51,7 +55,10 @@ import com.fuellog.app.ui.capture.CaptureViewModel
 import com.fuellog.app.util.Formatters
 import java.io.File
 import java.time.LocalDate
+import java.time.Instant
+import java.time.ZoneOffset
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EditRecordScreen(
     recordId: Long,
@@ -65,39 +72,51 @@ fun EditRecordScreen(
     val viewModel: EditViewModel = viewModel(factory = EditViewModel.factory(app.repository, recordId))
     val existing = viewModel.existing
 
-    var date by rememberSaveable { mutableStateOf(LocalDate.now().toString()) }
+    var date by rememberSaveable { mutableStateOf(captureViewModel.recognizedDate.toString()) }
     var fuelText by rememberSaveable { mutableStateOf("") }
     var costText by rememberSaveable { mutableStateOf("") }
     var priceText by rememberSaveable { mutableStateOf("") }
     var odoText by rememberSaveable { mutableStateOf("") }
+    var tripAText by rememberSaveable { mutableStateOf("") }
     var tripText by rememberSaveable { mutableStateOf("") }
+    var vehicleEconomyText by rememberSaveable { mutableStateOf("") }
     var errorMessage by rememberSaveable { mutableStateOf<String?>(null) }
     var prefilled by rememberSaveable { mutableStateOf(false) }
     var showDeleteDialog by rememberSaveable { mutableStateOf(false) }
+    var showDatePicker by rememberSaveable { mutableStateOf(false) }
+    val datePickerState = rememberDatePickerState()
 
     LaunchedEffect(existing) {
         if (prefilled) return@LaunchedEffect
         if (recordId > 0) {
             val r = existing ?: return@LaunchedEffect
             date = r.date
-            fuelText = Formatters.editable(r.fuelLiters)
+            fuelText = Formatters.editable2(r.fuelLiters)
             costText = if (r.costYen > 0) r.costYen.toString() else ""
-            priceText = r.unitPrice?.let { Formatters.editable(it) } ?: ""
+            priceText = r.unitPrice?.let { Formatters.editable2(it) } ?: ""
             odoText = r.odometerKm?.let { Formatters.editable(it) } ?: ""
+            tripAText = r.tripAKm?.let { Formatters.editable(it) } ?: ""
             tripText = r.tripKm?.let { Formatters.editable(it) } ?: ""
+            vehicleEconomyText = r.vehicleFuelEconomyKmPerLiter?.let { Formatters.editable(it) } ?: ""
             prefilled = true
         } else {
-            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable(it) }
+            date = captureViewModel.recognizedDate.toString()
+            captureViewModel.fuelLiters?.let { fuelText = Formatters.editable2(it) }
             captureViewModel.costYen?.let { costText = it.toString() }
-            captureViewModel.unitPrice?.let { priceText = Formatters.editable(it) }
+            captureViewModel.unitPrice?.let { priceText = Formatters.editable2(it) }
             captureViewModel.odometerKm?.let { odoText = Formatters.editable(it) }
+            captureViewModel.tripAKm?.let { tripAText = Formatters.editable(it) }
             captureViewModel.tripKm?.let { tripText = Formatters.editable(it) }
+            captureViewModel.vehicleFuelEconomyKmPerLiter?.let { vehicleEconomyText = Formatters.editable(it) }
             prefilled = true
         }
     }
 
     val receiptPath = existing?.receiptPhotoPath ?: captureViewModel.receiptPhotoPath
-    val meterPath = existing?.meterPhotoPath ?: captureViewModel.meterPhotoPath
+    // 旧記録に保存済みの画像だけを表示。新しいメーター写真は一時表示のみ。
+    val meterPath = existing?.meterPhotoPath
+    val meterAPhotoPath = captureViewModel.meterAPhotoPath
+    val meterBPhotoPath = captureViewModel.meterBPhotoPath
 
     Column(
         modifier = Modifier
@@ -127,15 +146,27 @@ fun EditRecordScreen(
                 }
             }
         }
-
         LabeledField(
             label = "給油日",
-            badge = "読み取った日を自動入力",
+            badge = captureViewModel.dateOrigin.label,
             value = date,
-            onValueChange = { date = it },
+            onValueChange = {
+                date = it
+                it.toLocalDateOrNullForPicker()?.let(captureViewModel::setDate)
+            },
             keyboardType = KeyboardType.Text,
             placeholder = "2026-10-06"
         )
+
+        OutlinedButton(
+            onClick = {
+                date.toLocalDateOrNullForPicker()?.let {
+                    datePickerState.selectedDateMillis = it.atStartOfDay(ZoneOffset.UTC).toInstant().toEpochMilli()
+                }
+                showDatePicker = true
+            },
+            modifier = Modifier.fillMaxWidth()
+        ) { Text("カレンダーから日付を選択") }
 
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             LabeledField(
@@ -167,26 +198,121 @@ fun EditRecordScreen(
             placeholder = "170.0"
         )
 
-        LabeledField(
-            label = "オドメーター: 総走行距離 (km)",
-            badge = "メモとして保存",
-            value = odoText,
-            onValueChange = { odoText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "48532"
-        )
+        if (meterBPhotoPath != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                PhotoThumbnail(meterBPhotoPath!!, "🔁 メーターB", Modifier.weight(0.85f), onRetake)
+                Column(modifier = Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LabeledField(
+                        label = "オドメーター：総走行距離 (km)",
+                        badge = "メーターB",
+                        value = odoText,
+                        onValueChange = { odoText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "012345"
+                    )
+                    LabeledField(
+                        label = "トリップB：オドメーター補完用 (km)",
+                        badge = "ODO小数部の照合用",
+                        value = tripText,
+                        onValueChange = { tripText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "2345.6"
+                    )
+                }
+            }
+        } else {
+            LabeledField(
+                label = "オドメーター：総走行距離 (km)",
+                badge = "メーターBから読取",
+                value = odoText,
+                onValueChange = { odoText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "012345"
+            )
+            LabeledField(
+                label = "トリップB：オドメーター補完用 (km)",
+                badge = "ODO小数部の照合用",
+                value = tripText,
+                onValueChange = { tripText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "2345.6"
+            )
+        }
 
-        LabeledField(
-            label = "トリップメーター: 区間距離 (km)",
-            badge = "OCR読取",
-            value = tripText,
-            onValueChange = { tripText = it },
-            keyboardType = KeyboardType.Decimal,
-            placeholder = "512.3"
-        )
+        if (meterAPhotoPath != null) {
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.Top) {
+                PhotoThumbnail(meterAPhotoPath!!, "🚗 メーターA", Modifier.weight(0.85f), onRetake)
+                Column(modifier = Modifier.weight(1.4f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    LabeledField(
+                        label = "トリップA：前回満タンからの総走行距離 (km)",
+                        badge = "燃費計算に使用",
+                        value = tripAText,
+                        onValueChange = { tripAText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "512.3"
+                    )
+                    LabeledField(
+                        label = "車載燃費 (km/L)",
+                        badge = "メーターAから読取",
+                        value = vehicleEconomyText,
+                        onValueChange = { vehicleEconomyText = it },
+                        keyboardType = KeyboardType.Decimal,
+                        placeholder = "15.6"
+                    )
+                }
+            }
+        } else {
+            LabeledField(
+                label = "トリップA：前回満タンからの総走行距離 (km)",
+                badge = "燃費計算に使用",
+                value = tripAText,
+                onValueChange = { tripAText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "512.3"
+            )
+            LabeledField(
+                label = "車載燃費 (km/L)",
+                badge = "メーターAから読取",
+                value = vehicleEconomyText,
+                onValueChange = { vehicleEconomyText = it },
+                keyboardType = KeyboardType.Decimal,
+                placeholder = "15.6"
+            )
+        }
+
+        val litersForComparison = fuelText.replace(",", "").toDoubleOrNull()
+        val tripAForComparison = tripAText.replace(",", "").toDoubleOrNull()
+        val vehicleForComparison = vehicleEconomyText.replace(",", "").toDoubleOrNull()
+        val calculatedEconomy = if (litersForComparison != null && litersForComparison > 0 &&
+            tripAForComparison != null && tripAForComparison > 0) {
+            tripAForComparison / litersForComparison
+        } else null
+        if (calculatedEconomy != null && vehicleForComparison != null) {
+            val difference = vehicleForComparison - calculatedEconomy
+            Column(
+                modifier = Modifier.fillMaxWidth().clip(RoundedCornerShape(10.dp))
+                    .background(Color(0xFFEAF4EB)).padding(12.dp),
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text("満タン法の計算燃費：${Formatters.fmt1(calculatedEconomy)} km/L", fontSize = 12.sp)
+                Text(
+                    "車載燃費 − 満タン法：${if (difference > 0) "+" else ""}${Formatters.fmt1(difference)} km/L",
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
+        }
+
+        if (meterAPhotoPath != null || meterBPhotoPath != null) {
+            Text(
+                "写真をタップすると拡大できます。メーター写真は確認用の一時画像で、保存後に削除されます。",
+                fontSize = 10.sp,
+                color = Color(0xFF7A828F)
+            )
+        }
 
         Text(
-            "※ すべての項目は修正できます\n※ トリップ未入力時はオドメーター差分から走行距離を自動計算します",
+            "※ すべての項目は修正できます\n※ 燃費計算にはトリップAを優先し、未入力時はオドメーター差分を使用します\n※ トリップBはオドメーターの小数部補完に利用します",
             fontSize = 10.sp,
             color = Color(0xFF7A828F)
         )
@@ -206,11 +332,37 @@ fun EditRecordScreen(
                         val record = FuelRecord(
                             id = existing?.id ?: 0,
                             date = date,
-                            fuelLiters = liters,
+                            fuelLiters = captureViewModel.fuelLiters?.takeIf {
+                                recordId <= 0 && fuelText == Formatters.editable2(it)
+                            } ?: existing?.takeIf {
+                                fuelText == Formatters.editable2(it.fuelLiters)
+                            }?.fuelLiters ?: liters,
                             costYen = costText.replace(",", "").toIntOrNull() ?: 0,
-                            unitPrice = priceText.replace(",", "").toDoubleOrNull(),
-                            odometerKm = odoText.replace(",", "").toDoubleOrNull(),
-                            tripKm = tripText.replace(",", "").toDoubleOrNull(),
+                            unitPrice = captureViewModel.unitPrice?.takeIf {
+                                recordId <= 0 && priceText == Formatters.editable2(it)
+                            } ?: existing?.takeIf { it.unitPrice != null &&
+                                priceText == Formatters.editable2(it.unitPrice) }?.unitPrice
+                                ?: priceText.replace(",", "").toDoubleOrNull(),
+                            odometerKm = captureViewModel.odometerKm?.takeIf {
+                                recordId <= 0 && odoText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.odometerKm != null &&
+                                odoText == Formatters.editable(it.odometerKm) }?.odometerKm
+                                ?: odoText.replace(",", "").toDoubleOrNull(),
+                            tripAKm = captureViewModel.tripAKm?.takeIf {
+                                recordId <= 0 && tripAText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.tripAKm != null &&
+                                tripAText == Formatters.editable(it.tripAKm) }?.tripAKm
+                                ?: tripAText.replace(",", "").toDoubleOrNull(),
+                            tripKm = captureViewModel.tripKm?.takeIf {
+                                recordId <= 0 && tripText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.tripKm != null &&
+                                tripText == Formatters.editable(it.tripKm) }?.tripKm
+                                ?: tripText.replace(",", "").toDoubleOrNull(),
+                            vehicleFuelEconomyKmPerLiter = captureViewModel.vehicleFuelEconomyKmPerLiter?.takeIf {
+                                recordId <= 0 && vehicleEconomyText == Formatters.editable(it)
+                            } ?: existing?.takeIf { it.vehicleFuelEconomyKmPerLiter != null &&
+                                vehicleEconomyText == Formatters.editable(it.vehicleFuelEconomyKmPerLiter) }?.vehicleFuelEconomyKmPerLiter
+                                ?: vehicleEconomyText.replace(",", "").toDoubleOrNull(),
                             receiptPhotoPath = receiptPath,
                             meterPhotoPath = meterPath,
                             createdAt = existing?.createdAt ?: System.currentTimeMillis()
@@ -233,6 +385,27 @@ fun EditRecordScreen(
         }
 
         Spacer(modifier = Modifier.height(24.dp))
+    }
+
+
+    if (showDatePicker) {
+        DatePickerDialog(
+            onDismissRequest = { showDatePicker = false },
+            confirmButton = {
+                TextButton(onClick = {
+                    datePickerState.selectedDateMillis?.let { millis ->
+                        date = Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate().toString()
+                        captureViewModel.setDate(Instant.ofEpochMilli(millis).atZone(ZoneOffset.UTC).toLocalDate())
+                    }
+                    showDatePicker = false
+                }) { Text("決定") }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDatePicker = false }) { Text("キャンセル") }
+            }
+        ) {
+            DatePicker(state = datePickerState)
+        }
     }
 
     if (showDeleteDialog) {
@@ -297,12 +470,13 @@ private fun PhotoThumbnail(
     modifier: Modifier = Modifier,
     onRetake: () -> Unit
 ) {
-    Box(modifier = modifier.height(96.dp).clip(RoundedCornerShape(12.dp))) {
+    var showPreview by remember { mutableStateOf(false) }
+    Box(modifier = modifier.height(180.dp).clip(RoundedCornerShape(12.dp))) {
         AsyncImage(
             model = File(path),
-            contentDescription = label,
-            contentScale = ContentScale.Crop,
-            modifier = Modifier.fillMaxSize()
+            contentDescription = "$label（タップして拡大）",
+            contentScale = ContentScale.Fit,
+            modifier = Modifier.fillMaxSize().clickable { showPreview = true }
         )
         Text(
             label,
@@ -328,4 +502,25 @@ private fun PhotoThumbnail(
                 .padding(horizontal = 8.dp, vertical = 3.dp)
         )
     }
+    if (showPreview) {
+        AlertDialog(
+            onDismissRequest = { showPreview = false },
+            title = { Text(label) },
+            text = {
+                AsyncImage(
+                    model = File(path),
+                    contentDescription = label,
+                    contentScale = ContentScale.Fit,
+                    modifier = Modifier.fillMaxWidth().height(360.dp)
+                )
+            },
+            confirmButton = {
+                TextButton(onClick = { showPreview = false }) { Text("閉じる") }
+            }
+        )
+    }
 }
+
+
+private fun String.toLocalDateOrNullForPicker(): LocalDate? =
+    try { LocalDate.parse(this) } catch (_: Exception) { null }

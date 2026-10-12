@@ -1,14 +1,20 @@
 package com.fuellog.app.ui.settings
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -24,14 +30,39 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.fuellog.app.ui.RecordsViewModel
+import com.fuellog.app.util.CsvImporter
 
 @Composable
 fun SettingsScreen(viewModel: RecordsViewModel) {
     val entries by viewModel.entries.collectAsStateWithLifecycle()
     var showDeleteAllDialog by rememberSaveable { mutableStateOf(false) }
+    var importMessage by rememberSaveable { mutableStateOf<String?>(null) }
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val importLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
+        if (uri != null) {
+            try {
+                val csv = context.contentResolver.openInputStream(uri)?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+                if (csv == null) {
+                    importMessage = "CSVファイルを開けませんでした"
+                } else {
+                    val parsed = CsvImporter.parse(csv)
+                    if (parsed.records.isEmpty()) {
+                        importMessage = parsed.errors.firstOrNull() ?: "取り込めるデータがありません"
+                    } else {
+                        viewModel.importRecords(parsed.records) {
+                            importMessage = "${parsed.records.size}件を取り込みました" +
+                                if (parsed.skippedRows > 0) "（${parsed.skippedRows}行をスキップ）" else ""
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                importMessage = "CSVの読み込みに失敗しました"
+            }
+        }
+    }
 
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text("⚙️ 設定", fontSize = 20.sp, fontWeight = FontWeight.Bold, color = Color(0xFF1C2B21))
@@ -65,13 +96,27 @@ fun SettingsScreen(viewModel: RecordsViewModel) {
             ) {
                 Text("燃費の計算方法", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "・トリップメーターの値を優先して使用します\n" +
+                    "・トリップB（前回満タンから今回給油までの距離）を優先して使用します\n" +
                         "・トリップ未入力時はオドメーター(総走行距離)の差分から計算します\n" +
                         "・オドメーター値はメモとして全期間保存されます\n" +
                         "・燃費 = 走行距離 ÷ 給油量",
                     fontSize = 11.sp,
                     color = Color(0xFF4A5560)
                 )
+            }
+        }
+
+        Card(
+            shape = RoundedCornerShape(16.dp),
+            colors = CardDefaults.cardColors(containerColor = Color.White)
+        ) {
+            Column(modifier = Modifier.padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text("CSVインポート", fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                Text("FuelLogのCSV出力形式と旧形式のCSVを取り込めます。日付・給油量が不正な行はスキップします。", fontSize = 11.sp, color = Color(0xFF4A5560))
+                Button(onClick = { importLauncher.launch(arrayOf("text/*", "application/csv", "application/vnd.ms-excel")) }, modifier = Modifier.fillMaxWidth()) {
+                    Text("CSVファイルを選択")
+                }
+                importMessage?.let { Text(it, fontSize = 11.sp, color = Color(0xFF2E7D32)) }
             }
         }
 

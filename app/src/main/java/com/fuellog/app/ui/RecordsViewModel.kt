@@ -17,6 +17,13 @@ class RecordsViewModel(private val repository: FuelRepository) : ViewModel() {
     val entries: StateFlow<List<FuelEntry>> = repository.observeEntries()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
+    fun importRecords(records: List<FuelRecord>, onDone: () -> Unit) {
+        viewModelScope.launch {
+            if (records.isNotEmpty()) repository.insertAll(records)
+            onDone()
+        }
+    }
+
     fun delete(record: FuelRecord) {
         viewModelScope.launch { repository.delete(record) }
     }

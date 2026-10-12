@@ -187,18 +187,23 @@ private fun EntryRow(entry: FuelEntry, average: Double?, onClick: () -> Unit) {
         BodyCell(entry.distanceKm?.let { Formatters.fmt0(it) } ?: "—", W_DIST)
         BodyCell(Formatters.fmt1(entry.record.fuelLiters), W_FUEL)
         Box(modifier = Modifier.weight(W_ECO), contentAlignment = Alignment.Center) {
-            val eco = entry.economyKmPerLiter
-            val (bg, fg) = ecoBadgeColors(eco, average)
-            Text(
-                eco?.let { Formatters.fmt1(it) } ?: "—",
-                fontSize = 10.sp,
-                fontWeight = FontWeight.Bold,
-                color = fg,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(9.dp))
-                    .background(bg)
-                    .padding(horizontal = 6.dp, vertical = 3.dp)
-            )
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                val eco = entry.economyKmPerLiter
+                val (bg, fg) = ecoBadgeColors(eco, average)
+                Text(
+                    eco?.let { Formatters.fmt1(it) } ?: "—",
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = fg,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(9.dp))
+                        .background(bg)
+                        .padding(horizontal = 6.dp, vertical = 3.dp)
+                )
+                entry.record.vehicleFuelEconomyKmPerLiter?.let {
+                    Text("車載 ${Formatters.fmt1(it)}", fontSize = 8.sp, color = Color(0xFF7A828F))
+                }
+            }
         }
         BodyCell(if (entry.record.costYen > 0) Formatters.money(entry.record.costYen) else "—", W_COST)
     }
