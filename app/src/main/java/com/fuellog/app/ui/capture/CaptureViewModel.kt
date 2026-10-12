@@ -70,13 +70,14 @@ class CaptureViewModel : ViewModel() {
      * メーターAはTrip Aと車載燃費、メーターBはODOとTrip Bを採用する。
      * 写真自体は給油記録に紐付けず、読み取り結果だけを保持する。
      */
-    fun onDashboardRecognized(path: String, text: String, target: CaptureTarget) {
+    fun onDashboardRecognized(path: String, text: String, target: CaptureTarget, fallbackText: String? = null) {
         val result = OcrAnalyzer.parseDashboard(text)
+        val fallback = fallbackText?.let(OcrAnalyzer::parseDashboard)
         when (target) {
             CaptureTarget.ODOMETER -> {
                 meterAPhotoPath = path
-                tripAKm = result.tripAKm
-                vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter
+                tripAKm = result.tripAKm ?: fallback?.tripAKm
+                vehicleFuelEconomyKmPerLiter = result.vehicleFuelEconomyKmPerLiter ?: fallback?.vehicleFuelEconomyKmPerLiter
                 val count = listOf(tripAKm, vehicleFuelEconomyKmPerLiter).count { it != null }
                 infoMessage = if (count > 0) {
                     "メーターAを読み取りました（トリップA・車載燃費：${count}項目）。必要に応じて確認・修正してください"
@@ -87,8 +88,8 @@ class CaptureViewModel : ViewModel() {
             CaptureTarget.TRIP -> {
                 meterBPhotoPath = path
                 // BラベルがOCRで欠落しても、メーターB画像内の小数付き距離を候補にする。
-                tripKm = result.tripBKm ?: OcrAnalyzer.parseTrip(text)
-                odometerKm = result.odometerKm
+                tripKm = result.tripBKm ?: OcrAnalyzer.parseTrip(text) ?: fallback?.tripBKm ?: fallbackText?.let(OcrAnalyzer::parseTrip)
+                odometerKm = result.odometerKm ?: fallback?.odometerKm
                 val count = listOf(odometerKm, tripKm).count { it != null }
                 infoMessage = if (count > 0) {
                     "メーターBを読み取りました（ODO・トリップB：${count}項目）。必要に応じて確認・修正してください"
