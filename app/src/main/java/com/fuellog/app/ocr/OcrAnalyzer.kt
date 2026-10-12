@@ -50,8 +50,8 @@ object OcrAnalyzer {
 
     /**
      * Dashboard OCR uses labels where possible so Trip A and Trip B are not confused.
-     * Odometer is an integer display; Trip A can supply its decimal digit only when
-     * its integer part agrees with the odometer through the thousands place.
+     * Odometer is an integer display; Trip B can supply its decimal digit when its
+     * four-digit integer part approximately matches the odometer's last four digits.
      */
     fun parseDashboard(text: String): DashboardResult {
         // 車載メーターの表示形式を優先する。NFKCで全角英数字・小数点を半角にそろえる。
@@ -125,13 +125,31 @@ object OcrAnalyzer {
             listOf("AVG", "平均燃費", "燃費", "KM/L", "KM／L"),
             { it in 0.0..99.9 }
         )
-        val mergedOdometer = odoRaw?.let { mergeOdometerWithTripADecimal(it, tripA) }
+        val mergedOdometer = odoRaw?.let { mergeOdometerWithTripBDecimal(it, tripB) }
         return DashboardResult(mergedOdometer, tripA, tripB, vehicleEconomy)
     }
 
     /**
-     * Adds Trip A's decimal digit only if the odometer and Trip A agree through
-     * the thousands place. Otherwise the odometer is retained as an integer value.
+     * ODOの下4桁とTrip Bの整数部4桁を比較し、小数部をODOに補完する。
+     * OCR誤読を許容して、4桁中1桁までの不一致なら一致とみなす。
+     * 条件を満たさない場合はODOの整数値をそのまま返す。
+     */
+    fun mergeOdometerWithTripBDecimal(odometerInteger: Double, tripB: Double?): Double {
+        val odoWhole = odometerInteger.toLong()
+        if (tripB == null || odoWhole < 1000L) return odoWhole.toDouble()
+
+        val odoLastFour = (odoWhole % 10000L).toString().padStart(4, '0')
+        val tripWhole = tripB.toLong()
+        val tripFourDigits = tripWhole.toString().padStart(4, '0').takeLast(4)
+        val differingDigits = odoLastFour.indices.count { odoLastFour[it] != tripFourDigits[it] }
+        if (differingDigits > 1) return odoWhole.toDouble()
+
+        val decimal = ((tripB * 10).toLong() % 10).coerceIn(0L, 9L)
+        return odoWhole.toDouble() + decimal / 10.0
+    }
+
+    /**
+     * 旧APIとの互換性維持用。ダッシュボード解析ではTrip B版を使用する。
      */
     fun mergeOdometerWithTripADecimal(odometerInteger: Double, tripA: Double?): Double {
         val odoWhole = odometerInteger.toLong()
