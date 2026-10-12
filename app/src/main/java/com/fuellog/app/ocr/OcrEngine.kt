@@ -27,8 +27,20 @@ class OcrEngine(private val context: Context) {
     /** レシート全体を読み取る。 */
     suspend fun recognizeReceipt(uri: Uri): String = recognize(uri, useJapanese = true)
 
-    /** メーター画像全体を読み取る。 */
-    suspend fun recognizeMeter(uri: Uri): String = recognize(uri, useJapanese = true)
+    /** メーターは日本語・英数字の両認識器を使い、車載表示の読み落としを減らす。 */
+    suspend fun recognizeMeter(uri: Uri): String = combineMeterResults(
+        runCatching { recognize(uri, useJapanese = true) }.getOrDefault(""),
+        runCatching { recognize(uri, useJapanese = false) }.getOrDefault("")
+    )
+
+    /** ROIで切り出したメーターも日本語・英数字の両認識器で読む。 */
+    suspend fun recognizeMeterRegion(file: java.io.File, roi: NormalizedRoi): String = combineMeterResults(
+        runCatching { recognizeRegion(file, roi, useJapanese = true) }.getOrDefault(""),
+        runCatching { recognizeRegion(file, roi, useJapanese = false) }.getOrDefault("")
+    )
+
+    private fun combineMeterResults(japanese: String, latin: String): String =
+        listOf(japanese.trim(), latin.trim()).filter { it.isNotEmpty() }.distinct().joinToString("\n")
 
     /**
      * 正規化ROI（画像比率0..1）で指定した範囲だけをOCRする。
