@@ -17,6 +17,9 @@ enum class CaptureTarget(val label: String, val guide: String) {
 class CaptureViewModel : ViewModel() {
     var receiptPhotoPath: String? by mutableStateOf(null); private set
     var meterPhotoPath: String? by mutableStateOf(null); private set
+    /** 確認画面で参照する一時画像。給油記録には保存しない。 */
+    var meterAPhotoPath: String? by mutableStateOf(null); private set
+    var meterBPhotoPath: String? by mutableStateOf(null); private set
     var fuelLiters: Double? by mutableStateOf(null); private set
     var costYen: Int? by mutableStateOf(null); private set
     var unitPrice: Double? by mutableStateOf(null); private set
@@ -71,6 +74,7 @@ class CaptureViewModel : ViewModel() {
         val result = OcrAnalyzer.parseDashboard(text)
         when (target) {
             CaptureTarget.ODOMETER -> {
+                meterAPhotoPath = path
                 odometerKm = result.odometerKm
                 tripAKm = result.tripAKm
                 val count = listOf(odometerKm, tripAKm).count { it != null }
@@ -81,6 +85,7 @@ class CaptureViewModel : ViewModel() {
                 }
             }
             CaptureTarget.TRIP -> {
+                meterBPhotoPath = path
                 tripKm = result.tripBKm ?: if (result.tripAKm == null && result.tripBKm == null) {
                     OcrAnalyzer.parseTrip(text)
                 } else null
@@ -132,6 +137,12 @@ class CaptureViewModel : ViewModel() {
     fun reset() {
         receiptPhotoPath = null
         meterPhotoPath = null
+        // メーター写真は確認・修正が終わった時点で削除し、記録として残さない。
+        listOfNotNull(meterAPhotoPath, meterBPhotoPath).distinct().forEach { path ->
+            runCatching { java.io.File(path).delete() }
+        }
+        meterAPhotoPath = null
+        meterBPhotoPath = null
         fuelLiters = null
         costYen = null
         unitPrice = null
