@@ -88,19 +88,19 @@ class OcrAnalyzerFormatTest {
     }
 
     @Test
-    fun toleratesOneOcrDigitMismatchWhenMergingTripBDecimal() {
+    fun alwaysUsesTripBDecimalEvenWhenTripWholeDoesNotMatchOdometerTail() {
         assertEquals(
             12345.6,
-            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, 2348.6),
+            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, 9876.6),
             0.0001
         )
     }
 
     @Test
-    fun doesNotMergeTripBDecimalWhenLastFourDigitsDifferTooMuch() {
+    fun keepsIntegerOdometerWhenTripBIsMissing() {
         assertEquals(
             12345.0,
-            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, 9876.4),
+            OcrAnalyzer.mergeOdometerWithTripBDecimal(12345.0, null),
             0.0001
         )
     }
