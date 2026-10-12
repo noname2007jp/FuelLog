@@ -188,6 +188,11 @@ object OcrAnalyzer {
         return "$integerDigits.$decimalDigit".toDoubleOrNull()
     }
 
+    /** メーターB用。ラベルがOCRで欠落した場合も、4桁以下+小数1桁の表示だけを候補にする。 */
+    fun parseTripB(text: String): Double? =
+        Regex("""(?<!\d)\d{1,4}\.\d(?!\d)""")
+            .find(text)?.value?.toDoubleOrNull()
+
     /** トリップメーター(区間距離): 小数点付きの数値を優先 */
     fun parseTrip(text: String): Double? {
         val tokens = allNumbers(text)
