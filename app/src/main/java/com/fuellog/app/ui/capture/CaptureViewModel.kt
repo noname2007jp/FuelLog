@@ -88,7 +88,7 @@ class CaptureViewModel : ViewModel() {
             CaptureTarget.TRIP -> {
                 meterBPhotoPath = path
                 // BラベルがOCRで欠落しても、メーターB画像内の小数付き距離を候補にする。
-                tripKm = result.tripBKm ?: OcrAnalyzer.parseTrip(text) ?: fallback?.tripBKm ?: fallbackText?.let(OcrAnalyzer::parseTrip)
+                tripKm = result.tripBKm ?: OcrAnalyzer.parseTripB(text) ?: fallback?.tripBKm ?: fallbackText?.let(OcrAnalyzer::parseTripB)
                 odometerKm = result.odometerKm ?: fallback?.odometerKm
                 val count = listOf(odometerKm, tripKm).count { it != null }
                 infoMessage = if (count > 0) {
