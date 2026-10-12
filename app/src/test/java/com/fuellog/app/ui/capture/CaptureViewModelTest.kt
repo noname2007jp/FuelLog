@@ -52,6 +52,18 @@ TRIP B
     }
 
     @Test
+    fun meterBReadsTripDistanceWhenRoiContainsOnlyTheNumber() {
+        val viewModel = CaptureViewModel()
+        viewModel.onDashboardRecognized(
+            "/tmp/dashboard-b.jpg",
+            "2345.6",
+            CaptureTarget.TRIP
+        )
+
+        assertEquals(2345.6, viewModel.tripKm!!, 0.0001)
+    }
+
+    @Test
     fun meterBOcrFallsBackToFullImageWhenRoiDoesNotContainReadableValues() {
         val viewModel = CaptureViewModel()
         viewModel.onDashboardRecognized(
