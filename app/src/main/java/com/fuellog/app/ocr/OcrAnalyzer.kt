@@ -158,13 +158,8 @@ object OcrAnalyzer {
         val odoWhole = odometerInteger.toLong()
         if (tripB == null || odoWhole < 1000L) return odoWhole.toDouble()
 
-        val odoLastFour = (odoWhole % 10000L).toString().padStart(4, '0')
-        val tripWhole = tripB.toLong()
-        val tripFourDigits = tripWhole.toString().padStart(4, '0').takeLast(4)
-        val differingDigits = odoLastFour.indices.count { odoLastFour[it] != tripFourDigits[it] }
-        if (differingDigits > 1) return odoWhole.toDouble()
-
-        val decimal = ((tripB * 10).toLong() % 10).coerceIn(0L, 9L)
+        // Trip BはODO小数部の補完専用。末尾4桁の照合で弾かず、読み取った小数第1位を必ず採用する。
+        val decimal = kotlin.math.abs((tripB * 10.0).roundToLong() % 10L)
         return odoWhole.toDouble() + decimal / 10.0
     }
 
