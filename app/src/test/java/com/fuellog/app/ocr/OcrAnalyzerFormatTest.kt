@@ -60,6 +60,14 @@ class OcrAnalyzerFormatTest {
     }
 
     @Test
+    fun doesNotTreatAverageEconomyLabelAAsTripA() {
+        val result = OcrAnalyzer.parseDashboard("ODO 012345\nA 00.0 km/L")
+
+        assertNull(result.tripAKm)
+        assertEquals(0.0, result.vehicleFuelEconomyKmPerLiter!!, 0.0001)
+    }
+
+    @Test
     fun doesNotInventValuesWhenExpectedLabelsAndNumbersAreMissing() {
         val result = OcrAnalyzer.parseDashboard("dashboard unreadable")
 
