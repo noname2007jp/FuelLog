@@ -38,7 +38,7 @@ TRIP B
         viewModel.onDashboardRecognized(
             "/tmp/dashboard-b.jpg",
             """TRIP B
-321.4
+3456.4
 AVG
 15.6 km/L""",
             CaptureTarget.TRIP
